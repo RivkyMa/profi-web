@@ -1,4 +1,9 @@
-import { useId, type HTMLAttributes, type ReactNode } from "react";
+import {
+  useId,
+  type ComponentPropsWithRef,
+  type HTMLAttributes,
+  type ReactNode,
+} from "react";
 import { cn } from "@/lib/cn";
 
 /** Centers content to the site max width with the responsive side gutter. */
@@ -21,7 +26,7 @@ export function Container({
 }
 
 export interface SectionProps
-  extends Omit<HTMLAttributes<HTMLElement>, "title"> {
+  extends Omit<ComponentPropsWithRef<"section">, "title"> {
   eyebrow?: string;
   title?: ReactNode;
   description?: ReactNode;

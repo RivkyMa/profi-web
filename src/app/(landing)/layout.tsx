@@ -1,4 +1,5 @@
-import { ScrollPoseDriver } from "@/components/landing/ScrollPoseDriver";
+import { Header } from "@/components/landing/Header";
+import { ShieldChoreography } from "@/components/landing/ShieldChoreography";
 import { SmoothScrollProvider } from "@/components/landing/SmoothScrollProvider";
 import { ShieldBackdrop } from "@/components/three/ShieldBackdrop";
 import { preloadModels } from "@/lib/assets";
@@ -13,7 +14,8 @@ export default function LandingLayout({ children }: LayoutProps<"/">) {
   return (
     <SmoothScrollProvider>
       <ShieldBackdrop />
-      <ScrollPoseDriver />
+      <ShieldChoreography />
+      <Header />
       <div className="relative z-10 flex flex-1 flex-col">{children}</div>
     </SmoothScrollProvider>
   );

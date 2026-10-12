@@ -31,12 +31,13 @@ function ShieldRig({
   children: ReactNode;
 }) {
   const group = useRef<THREE.Group>(null);
+  const pulse = useRef<THREE.PointLight>(null);
 
   useFrame((state, delta) => {
     const g = group.current;
     if (!g) return;
 
-    const { pose, pointer } = sceneState;
+    const { pose, nudge, pointer } = sceneState;
     const live = animate ? 1 : 0;
     const t = state.clock.elapsedTime;
     const lambda = 4;
@@ -44,10 +45,18 @@ function ShieldRig({
     // Keep the shield inside narrow (portrait) viewports.
     const fit = THREE.MathUtils.clamp(state.viewport.width / 3.4, 0.55, 1);
 
-    g.position.x = damp(g.position.x, pose.x + pointer.x * 0.12 * live, lambda, delta);
+    g.position.x = damp(
+      g.position.x,
+      pose.x + nudge.x + pointer.x * 0.12 * live,
+      lambda,
+      delta,
+    );
     g.position.y = damp(
       g.position.y,
-      pose.y + Math.sin(t * 0.9) * 0.05 * live + pointer.y * 0.08 * live,
+      pose.y +
+        nudge.y +
+        Math.sin(t * 0.9) * 0.05 * live +
+        pointer.y * 0.08 * live,
       lambda,
       delta,
     );
@@ -55,22 +64,46 @@ function ShieldRig({
 
     g.rotation.x = damp(
       g.rotation.x,
-      pose.rotX - pointer.y * 0.16 * live + Math.sin(t * 0.5) * 0.03 * live,
+      pose.rotX +
+        nudge.rotX -
+        pointer.y * 0.16 * live +
+        Math.sin(t * 0.5) * 0.03 * live,
       lambda,
       delta,
     );
     g.rotation.y = damp(
       g.rotation.y,
-      pose.rotY + pointer.x * 0.35 * live + Math.sin(t * 0.35) * 0.1 * live,
+      pose.rotY +
+        nudge.rotY +
+        pointer.x * 0.35 * live +
+        Math.sin(t * 0.35) * 0.1 * live,
       lambda,
       delta,
     );
     g.rotation.z = damp(g.rotation.z, pose.rotZ, lambda, delta);
 
-    g.scale.setScalar(damp(g.scale.x, pose.scale * fit, lambda, delta));
+    g.scale.setScalar(
+      damp(g.scale.x, pose.scale * (1 + nudge.scale) * fit, lambda, delta),
+    );
+
+    // Stage "energy" pulses a cyan light in front of the shield.
+    const light = pulse.current;
+    if (light) {
+      light.intensity = damp(light.intensity, sceneState.energy * 40, 6, delta);
+    }
   });
 
-  return <group ref={group}>{children}</group>;
+  return (
+    <>
+      <pointLight
+        ref={pulse}
+        position={[0, 0.2, 3.2]}
+        color="#35d8cf"
+        intensity={0}
+      />
+      <group ref={group}>{children}</group>
+    </>
+  );
 }
 
 /**

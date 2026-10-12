@@ -7,6 +7,7 @@ import { useRenderTier } from "@/lib/device";
 import { refreshScrollTriggers } from "@/lib/scroll";
 import { sceneState } from "@/lib/scene-state";
 import { useReducedMotion } from "@/lib/use-reduced-motion";
+import { SceneBoundary } from "./SceneBoundary";
 import { ShieldFallback } from "./ShieldFallback";
 
 // The scene (three, r3f, drei, the GLB) is only fetched on the client, after
@@ -27,6 +28,7 @@ export function ShieldBackdrop() {
   const [ready, setReady] = useState(false);
   const [inView, setInView] = useState(true);
   const [tabVisible, setTabVisible] = useState(true);
+  const [armed, setArmed] = useState(false);
 
   // Pause rendering when the backdrop is not on screen (e.g. the route is
   // hidden by Activity) or the tab is in the background.
@@ -61,12 +63,39 @@ export function ShieldBackdrop() {
     };
   }, [tier, reduced]);
 
+  // Mount the scene only after the page has loaded and the browser is idle,
+  // so the hero text paints and becomes interactive first. The model itself is
+  // already downloading (preload hint), only parsing/GL work is deferred.
+  useEffect(() => {
+    if (tier !== "high" && tier !== "low") return;
+
+    let cancel: () => void = () => {};
+    const arm = () => setArmed(true);
+    const schedule = () => {
+      if (typeof window.requestIdleCallback === "function") {
+        const id = window.requestIdleCallback(arm, { timeout: 2500 });
+        cancel = () => window.cancelIdleCallback(id);
+      } else {
+        const id = globalThis.setTimeout(arm, 800);
+        cancel = () => globalThis.clearTimeout(id);
+      }
+    };
+
+    if (document.readyState === "complete") schedule();
+    else window.addEventListener("load", schedule, { once: true });
+
+    return () => {
+      window.removeEventListener("load", schedule);
+      cancel();
+    };
+  }, [tier]);
+
   const handleReady = useCallback(() => {
     setReady(true);
     refreshScrollTriggers();
   }, []);
 
-  const showScene = tier === "high" || tier === "low";
+  const showScene = armed && (tier === "high" || tier === "low");
 
   return (
     <div
@@ -75,29 +104,34 @@ export function ShieldBackdrop() {
       className="pointer-events-none fixed inset-0 z-0 h-dvh w-full"
       style={{ height: "100dvh" }}
     >
-      <div className="absolute inset-0 flex items-center justify-center">
-        <ShieldFallback
-          className={cn(
-            "w-[min(52vw,300px)] transition-opacity duration-700 ease-premium",
-            ready ? "opacity-0" : "opacity-90",
-          )}
-        />
-      </div>
-      {showScene && (
-        <div
-          className={cn(
-            "absolute inset-0 transition-opacity duration-700 ease-premium",
-            ready ? "opacity-100" : "opacity-0",
-          )}
-        >
-          <Scene
-            tier={tier}
-            paused={!inView || !tabVisible}
-            animate={!reduced}
-            onReady={handleReady}
+      {/* The choreography sets this element's opacity directly. */}
+      <div data-shield-dim className="absolute inset-0">
+        <div className="absolute inset-0 flex items-center justify-center">
+          <ShieldFallback
+            className={cn(
+              "w-[min(52vw,300px)] transition-opacity duration-700 ease-premium",
+              ready ? "opacity-0" : "opacity-90",
+            )}
           />
         </div>
-      )}
+        {showScene && (
+          <div
+            className={cn(
+              "absolute inset-0 transition-opacity duration-700 ease-premium",
+              ready ? "opacity-100" : "opacity-0",
+            )}
+          >
+            <SceneBoundary>
+              <Scene
+                tier={tier}
+                paused={!inView || !tabVisible}
+                animate={!reduced}
+                onReady={handleReady}
+              />
+            </SceneBoundary>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
