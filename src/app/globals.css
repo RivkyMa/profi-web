@@ -2,9 +2,10 @@
 
 /*
  * PROFI design tokens (dark, premium fintech).
- * Tone is inspired by the reference site (near-black grounds, warm ink,
- * brushed-metal accent, serif display + clean sans + mono for figures).
- * Values are our own; see DECISIONS.md for the rationale.
+ * Tone follows the reference (near-black grounds, warm ink, one luminous accent,
+ * serif display + clean sans + mono for figures). The accent is derived from
+ * the shield model itself: neon cyan, with violet/magenta as the secondary.
+ * See DECISIONS.md D-006 / D-016.
  */
 
 :root {
@@ -44,18 +45,23 @@
   --color-ink-2: #a8a59d;
   --color-ink-3: #85837c;
 
-  /* Brass accent (brushed metal) */
-  --color-brass-hi: #f1dfb4;
-  --color-brass-light: #dfc287;
-  --color-brass: #c9a35f;
-  --color-brass-deep: #96733c;
-  --color-brass-shadow: #5a4526;
-  --color-brass-dim: rgb(201 163 95 / 0.14);
-  --color-brass-glow: rgb(201 163 95 / 0.28);
+  /* Pulse accent (neon cyan, sampled from the shield) */
+  --color-pulse-hi: #b4f7f1;
+  --color-pulse-light: #72eee4;
+  --color-pulse: #35d8cf;
+  --color-pulse-deep: #168f9b;
+  --color-pulse-shadow: #0d4a52;
+  --color-pulse-dim: rgb(53 216 207 / 0.14);
+  --color-pulse-glow: rgb(53 216 207 / 0.3);
+
+  /* Violet / magenta secondary (shield crystal). Gradients and highlights. */
+  --color-violet: #a43bd0;
+  --color-violet-light: #d36bf0;
+  --color-violet-dim: rgb(164 59 208 / 0.16);
 
   /* Semantic outcomes. Never rely on color alone: always pair with a label. */
-  --color-gain: #5fd39b; /* coupon paid / principal returned */
-  --color-loss: #e0574f; /* converted to underlying / below barrier */
+  --color-gain: #7fe39a; /* coupon paid / principal returned */
+  --color-loss: #ff6b73; /* converted to underlying / below barrier */
   --color-steel: #9db4c9; /* neutral info */
 
   /* Type families (CSS variables are provided by next/font in layout.tsx) */
@@ -78,8 +84,8 @@
   --radius-xl: 20px;
 
   /* Elevation */
-  --shadow-glow: 0 0 0 1px rgb(201 163 95 / 0.16),
-    0 24px 80px -24px rgb(201 163 95 / 0.28);
+  --shadow-glow: 0 0 0 1px rgb(53 216 207 / 0.2),
+    0 20px 70px -20px rgb(53 216 207 / 0.35);
   --shadow-depth: 0 1px 0 rgb(255 255 255 / 0.04) inset,
     0 24px 60px -30px rgb(0 0 0 / 0.7);
 
@@ -102,12 +108,12 @@ body {
 }
 
 ::selection {
-  background: var(--color-brass-glow);
+  background: var(--color-pulse-glow);
   color: var(--color-ink-1);
 }
 
 :focus-visible {
-  outline: 2px solid var(--color-brass);
+  outline: 2px solid var(--color-pulse);
   outline-offset: 3px;
   border-radius: var(--radius-sm);
 }
