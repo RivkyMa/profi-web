@@ -15,9 +15,47 @@ export interface SceneProps {
   /** False when the user prefers reduced motion: static pose, render on demand. */
   animate: boolean;
   onReady: () => void;
+  /** Called when the device cannot sustain a usable frame rate. */
+  onGiveUp: () => void;
 }
 
 const damp = THREE.MathUtils.damp;
+
+const MIN_FPS = 18;
+const WINDOW_S = 3;
+
+/**
+ * Gives up on 3D when the device cannot keep up (software rendering, a very
+ * weak GPU): two consecutive 3-second windows under ~18 fps. The static shield
+ * takes over, so the page stays smooth instead of janky. Disabled when frames
+ * are rendered on demand (reduced motion).
+ */
+function FpsGuard({
+  enabled,
+  onGiveUp,
+}: {
+  enabled: boolean;
+  onGiveUp: () => void;
+}) {
+  const acc = useRef({ warm: 0, time: 0, frames: 0, bad: 0 });
+
+  useFrame((_, delta) => {
+    if (!enabled || delta > 1.5) return; // ignore pauses (hidden tab, resize)
+    const a = acc.current;
+    a.warm += delta;
+    if (a.warm < 2) return; // let shader compile and texture upload settle
+    a.time += delta;
+    a.frames += 1;
+    if (a.time >= WINDOW_S) {
+      a.bad = a.frames / a.time < MIN_FPS ? a.bad + 1 : 0;
+      a.time = 0;
+      a.frames = 0;
+      if (a.bad >= 2) onGiveUp();
+    }
+  });
+
+  return null;
+}
 
 /**
  * Moves the shield towards the pose in sceneState (written by ScrollTrigger)
@@ -107,7 +145,13 @@ function ShieldRig({
   );
 }
 
-export default function Scene({ tier, paused, animate, onReady }: SceneProps) {
+export default function Scene({
+  tier,
+  paused,
+  animate,
+  onReady,
+  onGiveUp,
+}: SceneProps) {
   const [dprCap, setDprCap] = useState(tier === "high" ? 2 : 1.25);
 
   const frameloop = !animate ? "demand" : paused ? "never" : "always";
@@ -123,6 +167,7 @@ export default function Scene({ tier, paused, animate, onReady }: SceneProps) {
       <PerformanceMonitor
         onDecline={() => setDprCap((cap) => Math.max(1, cap - 0.5))}
       />
+      <FpsGuard enabled={animate && !paused} onGiveUp={onGiveUp} />
       <StudioEnvironment />
       <directionalLight position={[3, 4, 5]} intensity={1.4} color="#fff3dc" />
       <ShieldRig animate={animate}>

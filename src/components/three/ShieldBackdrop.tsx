@@ -14,6 +14,10 @@ import { ShieldFallback } from "./ShieldFallback";
 // first paint, and never during SSR.
 const Scene = dynamic(() => import("./Scene"), { ssr: false });
 
+// Once a device has proven too slow, stay on the static shield for the rest of
+// the session (navigating away and back must not retry and stutter again).
+let sceneGaveUp = false;
+
 /**
  * The ONE fixed canvas behind the landing content.
  *
@@ -29,6 +33,7 @@ export function ShieldBackdrop() {
   const [inView, setInView] = useState(true);
   const [tabVisible, setTabVisible] = useState(true);
   const [armed, setArmed] = useState(false);
+  const [gaveUp, setGaveUp] = useState(sceneGaveUp);
 
   // Pause rendering when the backdrop is not on screen (e.g. the route is
   // hidden by Activity) or the tab is in the background.
@@ -95,7 +100,15 @@ export function ShieldBackdrop() {
     refreshScrollTriggers();
   }, []);
 
-  const showScene = armed && (tier === "high" || tier === "low");
+  const handleGiveUp = useCallback(() => {
+    sceneGaveUp = true;
+    setGaveUp(true);
+  }, []);
+
+  const showScene =
+    armed && !gaveUp && (tier === "high" || tier === "low");
+  // The static shield shows until the scene is ready, and again if it gave up.
+  const staticVisible = !ready || gaveUp;
 
   return (
     <div
@@ -106,11 +119,12 @@ export function ShieldBackdrop() {
     >
       {/* The choreography sets this element's opacity directly. */}
       <div data-shield-dim className="absolute inset-0">
-        <div className="absolute inset-0 flex items-center justify-center">
+        {/* Placed like the hero pose: above the copy on phones, to its right on wide screens. */}
+        <div className="absolute inset-0 flex items-start justify-center pt-[14vh] lg:items-center lg:justify-end lg:pt-0 lg:pr-[14vw]">
           <ShieldFallback
             className={cn(
               "w-[min(52vw,300px)] transition-opacity duration-700 ease-premium",
-              ready ? "opacity-0" : "opacity-90",
+              staticVisible ? "opacity-90" : "opacity-0",
             )}
           />
         </div>
@@ -127,6 +141,7 @@ export function ShieldBackdrop() {
                 paused={!inView || !tabVisible}
                 animate={!reduced}
                 onReady={handleReady}
+                onGiveUp={handleGiveUp}
               />
             </SceneBoundary>
           </div>
