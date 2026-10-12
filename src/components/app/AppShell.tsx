@@ -26,7 +26,7 @@ const NAV = [
 ] as const;
 
 function NavLinks({ orientation }: { orientation: "vertical" | "horizontal" }) {
-  const pathname = usePathname();
+  const pathname = usePathname().replace(/\/$/, "");
   return (
     <nav
       aria-label="App"

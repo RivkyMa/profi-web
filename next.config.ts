@@ -1,12 +1,18 @@
 import type { NextConfig } from "next";
 
+const githubPages = process.env.GITHUB_PAGES === "true";
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
+
 const nextConfig: NextConfig = {
-  /* config options here */
+  output: githubPages ? "export" : undefined,
+  basePath,
+  trailingSlash: githubPages,
   experimental: {
     agentFeedback: true,
   },
-  cacheComponents: true,
-  partialPrefetching: true,
+  // All demo data is local. Static metadata routes also work without a server.
+  cacheComponents: false,
+  partialPrefetching: false,
   turbopack: {
     rules: {
       "*.css": {

@@ -27,6 +27,22 @@ npm run build
 npm start
 ```
 
+## GitHub Pages preview
+
+The frontend demo URL is https://rivkyma.github.io/profi-web/ after the first
+successful Pages deployment.
+It uses mock data only; publishing the frontend does not deploy contracts or
+connect it to a blockchain.
+
+In **Settings > Pages > Build and deployment**, select **GitHub Actions** as
+the source. The workflow in `.github/workflows/pages.yml` checks the code,
+exports the static frontend and deploys it after pushes to `main`.
+
+The workflow sets `GITHUB_PAGES=true`, the Pages base path and the public site
+URL during the build. This exports `out/`, including an HTML page for each
+dashboard route. Navigation and 3D asset URLs include the repository path.
+Normal local development still runs at `http://localhost:3000`.
+
 | Script | What it does |
 | --- | --- |
 | `npm run dev` | Next.js dev server (Turbopack) |
@@ -40,7 +56,7 @@ Optional environment variables are listed in `.env.example` (site URL for metada
 
 ## Stack
 
-Next.js 16 (App Router, Turbopack, Cache Components), React 19, TypeScript (strict), Tailwind CSS v4, React Three Fiber + drei + three, GSAP + ScrollTrigger + `@gsap/react`, Lenis, zustand, Vitest. Fonts via `next/font`: Instrument Serif, Geist, Geist Mono.
+Next.js 16 (App Router, Turbopack), React 19, TypeScript (strict), Tailwind CSS v4, React Three Fiber + drei + three, GSAP + ScrollTrigger + `@gsap/react`, Lenis, zustand, Vitest. Fonts via `next/font`: Instrument Serif, Geist, Geist Mono.
 
 ## What is in the box
 

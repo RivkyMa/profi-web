@@ -1,5 +1,7 @@
 import { ImageResponse } from "next/og";
 
+export const dynamic = "force-static";
+
 export const alt =
   "PROFI: conditional protection and conditional premium on Robinhood Chain (testnet, mock data)";
 export const size = { width: 1200, height: 630 };

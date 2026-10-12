@@ -9,6 +9,8 @@
 
 import { preload } from "react-dom";
 
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
+
 export type PlaceholderKind = "shield" | "generic";
 
 export interface ModelAsset {
@@ -24,13 +26,13 @@ export interface ModelAsset {
 
 export const assets = {
   shield: {
-    url: "/models/shield.glb",
+    url: `${basePath}/models/shield.glb`,
     height: 2.5,
     preload: true,
     placeholder: "shield",
   },
   vault: {
-    url: "/models/vault.glb",
+    url: `${basePath}/models/vault.glb`,
     height: 2.5,
     // Shown in a small canvas lower on the page; fetch it only when needed.
     preload: false,
@@ -40,7 +42,7 @@ export const assets = {
   // full shield's 2048 px textures cost ~90 MB of VRAM, too much for a
   // header-sized canvas.
   shieldMini: {
-    url: "/models/shield-mini.glb",
+    url: `${basePath}/models/shield-mini.glb`,
     height: 2.5,
     preload: false,
     placeholder: "shield",
