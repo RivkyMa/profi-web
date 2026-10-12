@@ -113,3 +113,30 @@ Trade-off: Save-Data / weak-device users still download the 1.6 MB (the tier is 
 - If the GLB is missing, the page shows the procedural placeholder correctly but R3F's loader leaves one `pageerror` (rejected load promise) in the console. Harmless to the UI; only occurs when the file is absent.
 - `Launch App (Mock)` links to `/app/earn`, which does not exist until Phase 4 (prefetch 404s in the console until then).
 - `Tooltip` is not portalled; do not place it inside `overflow: hidden` containers.
+
+## Phase 3: Landing page
+
+### D-023 Shield look is a pure function of scroll (`ShieldChoreography`)
+Each section id is a "stop" with a wide and a narrow look (x, y, scale, rotation, canvas opacity). The look at any scroll position is an interpolation between the two stops whose section centers straddle the viewport center, measured live from `getBoundingClientRect`. A pinned section keeps its center aligned, so its stop simply holds during the pin.
+**Why not one tween per transition:** overlapping `fromTo` tweens on the same property fight each other on refresh (last created wins at scroll 0) and break when scrolling backwards. A pure function has neither problem. Pinned sections add their own scrubbed `nudge` (additive), never touching `pose`.
+
+### D-024 `pinSpacing: true` is explicit
+ScrollTrigger disables pin spacing by default when the pinned element's parent is `display: flex`. `<main>` is a flex column, so without the explicit option the pinned sections overlapped the ones after them. Both pinned sections set it.
+
+### D-025 Reduced motion and mobile
+- Reduced motion: no Lenis, no pins, no scrub, shield static; the canvas opacity still follows the page so text stays legible.
+- Core-idea section only pins at >= 1024px (two tall cards do not fit a phone viewport); the five-step section pins everywhere because inactive steps collapse to one line.
+- Without the `data-motion="on"` flag (SSR, no JS, reduced motion) every step is fully expanded, so content is never hidden by default.
+
+### D-026 Payoff explorer
+- Uses `simulate` for all 200+ curve points and every card, plus `payoff-view.ts` for mark-to-market (`earnPnl`, `protectNet`). No numbers are typed in by hand; the risk section's loss figure is also computed from the model.
+- "Just above / just below" uses 65.00 and 64.99 (one cent), and all four terminal outcomes (autocall, above, below, unwind) are always shown side by side, with losses.
+- Chart: one y-axis, 2 px lines, series split at the barrier so the cliff is a gap, crosshair + 5 px dots with a surface ring, legend, live readout, and a table view. Series colors `#1fa8a2` (Earn) and `#a95cd6` (Protect) passed the dataviz palette validator on the dark surface (lightness band, CVD delta E >= 12, contrast >= 3:1). The SVG is drawn in measured CSS pixels so axis text stays 11 px on phones.
+- "Net vs holding the token" = Protect's final value minus (token value + reserve), i.e. protection payoff minus premium paid.
+
+### D-027 Copy checks
+No landing text uses "guaranteed", "risk-free", "insured" or "APY". An automated browser check scans the rendered text for them. Even negated use was removed (a risk card was retitled "Funded does not mean safe"). Launch gates are listed as "Required", never as progress.
+
+### D-028 Performance work and what is deliberately left
+Measured with Lighthouse (see README). Changes that were real fixes: defer scene mount to idle; no probe WebGL context; hero text never transparent; low-priority model preload; color-based (not opacity-based) muted steps.
+Findings worth remembering: Lighthouse's simulated mobile LCP (10.7 s) is not the observed LCP (0.8 s); software WebGL inflates TBT; the Lantern simulation weighs script cost heavily. Remaining TBT is hydration + scene init and is a Phase 5 item (visibility-based hydration, import surface, real-GPU check).

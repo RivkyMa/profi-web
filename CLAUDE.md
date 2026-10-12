@@ -69,7 +69,7 @@ Also: equality at B and at A, missed observation -> unwind.
 - [x] Phase 0: Setup
 - [x] Phase 1: Payoff model (`src/lib/payoff.ts`, `src/lib/units.ts` + tests)
 - [x] Phase 2: Design system + 3D/animation foundation
-- [ ] Phase 3: Landing page (scroll storytelling)
+- [x] Phase 3: Landing page (scroll storytelling)
 - [ ] Phase 4: Mock dashboard (`/app/*`)
 - [ ] Phase 5: Polish + docs
 - Phases 6-7 (contracts, integration) only on request.
@@ -81,3 +81,9 @@ Also: equality at B and at A, missed observation -> unwind.
 - `src/components/landing/*` SmoothScrollProvider (the only Lenis owner), ScrollPoseDriver (replaced in Phase 3).
 - `src/app/(landing)/` landing layout (provider + canvas) and page. Dashboard will live outside this group.
 - Palette: grounds `ground-0..4`, ink `ink-1..3`, accent `pulse`, secondary `violet`, outcomes `gain` / `loss` / `steel` (DECISIONS D-016).
+
+## Code map (Phase 3)
+- Landing sections live in `src/components/landing/`; their ids (`hero idea how products payoff risks gates cta`) are the stops in `ShieldChoreography.tsx`. Keep them in sync when adding or renaming sections.
+- Pinned sections: `IdeaSection`, `HowItWorks` (both set `pinSpacing: true`, see D-024). They write `sceneState.nudge` / `energy` only.
+- `src/lib/format.ts` (display formatting), `src/lib/payoff-view.ts` (mark-to-market), `src/lib/mock/reference-market.ts` (explorer market + terminal scenarios).
+- Browser verification recipe: build, `next start -p 3100`, drive Edge via `playwright-core` (executablePath), Lighthouse via the `lighthouse` npm CLI with `CHROME_PATH` pointing at Edge. Do not install those into the project.
