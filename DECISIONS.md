@@ -141,7 +141,7 @@ No landing text uses "guaranteed", "risk-free", "insured" or "APY". An automated
 Measured with Lighthouse (see README). Changes that were real fixes: defer scene mount to idle; no probe WebGL context; hero text never transparent; low-priority model preload; color-based (not opacity-based) muted steps.
 Findings worth remembering: Lighthouse's simulated mobile LCP (10.7 s) is not the observed LCP (0.8 s); software WebGL inflates TBT; the Lantern simulation weighs script cost heavily. Remaining TBT is hydration + scene init and is a Phase 5 item (visibility-based hydration, import surface, real-GPU check).
 
-### D-029 `vault.glb`: where it is shown, and how
+### D-029 `vault.glb`: where it is shown, and how (landing placement superseded by D-042)
 Raw model: 109 MB (104 MiB), 2.82M triangles, three 4096/2048 JPEGs. Optimized with the same pipeline to 1.16 MB (about 85k triangles, 1024 px WebP, meshopt).
 - **Placement:** the Vaults card in the landing's product section (spec: "objek 3D bila ada aset"), and the Vaults page header in the dashboard (Phase 4). Vaults is the product the model represents, so it lives with that product rather than being forced into the shield's hero stage.
 - **Separate small canvas, not a second object in the background canvas.** A card sits in the normal flow with a rounded border; drei `View` would need a see-through DOM window (the DOM is above the canvas), an opaque per-view background that pokes out of rounded corners, and it would be dimmed by the choreography and break under `frameloop="demand"`. A tiny dedicated canvas (`MiniModelCanvas`) is isolated, rounded by its container and cheap: 1024 px textures, about 7 MB of VRAM. The fixed background canvas is still the only large one.
@@ -195,3 +195,19 @@ A duplicate React key (barrier row equal to the 65% row) only appeared in `next 
 
 ### D-041 Repo hygiene
 Removed empty-directory `.gitkeep` files and the scaffold favicon; added `engines.node >= 20.9`. `assets-src/` (raw models, over 160 MB) is git-ignored; the optimized GLBs in `public/models/` are committed so a fresh clone runs without them.
+
+## Post-Phase-5 follow-ups
+
+### D-042 The vault model gets its own landing section (supersedes the card placement in D-029)
+A 160 px card slot made a detailed, neon-lit model look like a thumbnail, and the user said it did not suit a card. It now has a dedicated "Vaults" section with the model shown large next to the copy.
+- It is rendered inside the **same fixed canvas** as the shield (`VaultRig` in `Scene.tsx`), driven by `sceneState.vault` and the same stop interpolation. The shield shrinks to about 0 and the vault grows in place (same x, y and rotation on both sides of its section), so the swap reads as one object handing over to the next.
+- The model's GLB is not mounted or fetched until the choreography sets `vaultWanted` (section about two screens away). `VaultRig` hides it (`visible = false`) while its scale is ~0.
+- Sizing note: the model is wide (about 3 x 1.6 units at the manifest height), so at x = 1.8 the scale is 0.72; larger values crop at the viewport edge. On phones it is a dimmed backdrop (canvas opacity 0.3) because a fixed canvas cannot reserve space inside a long section.
+- The product card for Vaults is an icon again. The dashboard header keeps the small `ModelMedia` accent, which is a header, not a card.
+- Allocation bars in the section come from the same mock epoch the dashboard uses.
+
+### D-043 Static shield fallback was oversized since Phase 2
+`ShieldFallback` applied `w-full` and the caller's `w-[min(52vw,300px)]` to one element, so the built-in class could win and the SVG filled the screen. It only appears on the paths that earlier checks verified by counting elements, not by looking (weak devices, no WebGL, FPS give-up). The caller's width now replaces the default instead of competing with it. Same family of bug as `hidden` versus `inline-flex` (D-034): never put two utilities for one property on an element.
+
+### D-044 `?3d=on` override
+Weak-device detection is heuristic and can be wrong, and software rendering (a graphics-blocklisted laptop, a remote desktop) is indistinguishable from a slow GPU until frames are measured. `?3d=on` lifts the static downgrade and disables the FPS give-up for that page load, so a reviewer can always see the scene.

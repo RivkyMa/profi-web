@@ -104,6 +104,8 @@ Also covered: equality at the barrier and at the autocall level, a missed observ
 - `prefers-reduced-motion`: no smooth scroll, no pinning, no scrubbed motion, the shield stays still, and all copy stays visible.
 - Weak devices (no WebGL, Save-Data, 2 GB or less memory, 2 cores or fewer) get a static shield instead of a canvas. If a device cannot sustain about 18 fps for two consecutive 3-second windows, the scene gives up and the static shield takes over for the session.
 - Text is never blocked by model loading; a missing GLB renders a procedural placeholder.
+- The vault has its own landing section. Its model lives in the same fixed canvas and trades places with the shield as you scroll (the shield shrinks away, the vault grows in place). Its GLB is only requested when that section is about two screens away.
+- Add `?3d=on` to the URL to force the 3D scene on a device that was downgraded to the static shield (weak-device heuristics or the FPS give-up).
 
 ## Mock dashboard
 
@@ -142,7 +144,7 @@ Until the file exists, the procedural placeholder named in the entry is rendered
 | Model | Raw | Optimized | Used for |
 | --- | --- | --- | --- |
 | `shield.glb` | 54 MB, 1.06M triangles, 4096 px textures | 1.6 MB, 84.5k triangles, 2048 px WebP, meshopt | Landing background scene |
-| `vault.glb` | 109 MB, 2.82M triangles | 1.2 MB, 85k triangles, 1024 px | Vaults card and Vaults page header |
+| `vault.glb` | 109 MB, 2.82M triangles | 1.2 MB, 85k triangles, 1024 px | Landing Vaults section (background canvas) and Vaults page header |
 | `shield-mini.glb` | (from the shield) | 0.4 MB, 512 px | Portfolio empty state |
 
 Meshopt is used instead of Draco so no decoder is downloaded at runtime. Lighting is procedural (`Lightformer`), so there is no HDR download either.

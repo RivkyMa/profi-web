@@ -95,6 +95,10 @@ Also: equality at B and at A, missed observation -> unwind.
 - Earn and Protect are one component: `MarketWorkbench side="earn" | "protect"`.
 - Journey recipe (kept out of the repo): build, `next start -p 3100`, Playwright with Edge `executablePath`; navigate with in-app links (a full `goto` resets the in-memory store).
 
+## Code map (follow-ups)
+- Landing sections now include `vaults` (`VaultsShowcase.tsx`) between products and payoff; the stop list in `ShieldChoreography.tsx` must keep that order. The vault is a second object in the same canvas (`VaultRig`, `sceneState.vault`).
+- `?3d=on` forces the 3D scene (see D-044).
+
 ## Code map (Phase 5)
 - `src/app/{icon.svg,opengraph-image.tsx,robots.ts,sitemap.ts,not-found.tsx,error.tsx}`: SEO and error surfaces. Root layout has the metadata and the skip link; every page's `<main>` has `id="main"`.
 - `FpsGuard` lives in `components/three/Scene.tsx`; the give-up flag is in `ShieldBackdrop.tsx`.
