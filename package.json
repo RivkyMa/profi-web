@@ -2,6 +2,10 @@
   "name": "profi-web",
   "version": "0.1.0",
   "private": true,
+  "description": "Scroll-driven 3D landing page and mock dashboard for PROFI (testnet / mock data).",
+  "engines": {
+    "node": ">=20.9"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",

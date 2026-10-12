@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { FinalCta } from "@/components/landing/FinalCta";
 import { Footer } from "@/components/landing/Footer";
 import { Hero } from "@/components/landing/Hero";
@@ -8,6 +9,8 @@ import { PayoffExplorer } from "@/components/landing/PayoffExplorer";
 import { ProductsSection } from "@/components/landing/ProductsSection";
 import { RiskSection } from "@/components/landing/RiskSection";
 
+export const metadata: Metadata = { alternates: { canonical: "/" } };
+
 /**
  * Landing page. Section ids (hero, idea, how, products, payoff, risks, gates,
  * cta) are the stops used by ShieldChoreography; keep them in sync.
@@ -15,7 +18,7 @@ import { RiskSection } from "@/components/landing/RiskSection";
 export default function Home() {
   return (
     <>
-      <main className="flex flex-1 flex-col">
+      <main id="main" className="flex flex-1 flex-col">
         <Hero />
         <IdeaSection />
         <HowItWorks />
