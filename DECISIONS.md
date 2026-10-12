@@ -48,3 +48,31 @@ RPC URLs, chain ids and contract addresses are never guessed or hard-coded. They
 
 ### D-009 Project docs are in English
 `README.md`, `DECISIONS.md` and `CLAUDE.md` are written in English, matching the "UI copy, code comments and README in English" rule.
+
+## Phase 1: Payoff model
+
+### D-010 Fixed-point with 6 decimals, bigint only
+Prices, stablecoin amounts and token amounts are bigint counted in millionths (`src/lib/units.ts`). `parseUnits` throws on more than 6 decimals instead of rounding. No floats anywhere in `payoff.ts`.
+**Why:** 47.5 and 2.5 from the test vectors must be exact, and the future Solidity implementation must produce identical integers. The model's 6 decimals are an abstraction of "smallest unit"; real token decimals (e.g. 18) are a contracts-phase mapping concern.
+
+### D-011 Barrier and autocall are basis points, compared exactly
+`barrierBps` / `autocallBps` are integers (6500 = 65%). A coupon or autocall condition is evaluated as `price * 10000 >= strike * bps`, so the threshold itself is never rounded. `DerivedTerms.barrier` / `autocall` are floored prices for display only.
+**Why:** equality at B and at A is a stated rule; exact integer comparison makes `Pi == B` unambiguous.
+
+### D-012 Fee is computed on the whole position's gross coupon
+Fee per paying observation = `floor(L * c * feeBps / 10000)`, not `L * floor(c * feeBps / 10000)`. Remainder goes to Earn.
+**Why:** the spec says "5% of the gross coupon earned, rounded down, remainder to Earn". A position's coupon is one amount, so it is rounded once. Contracts must use the same formula.
+
+### D-013 Maximum protection cost equals the premium reserve R
+`R = m * L * c` is what Protect funds up front; the protocol fee is carved out of coupons that are paid, so Protect's maximum cost cannot exceed R. Exposed as `DerivedTerms.reserve`.
+
+### D-014 Strict input handling in `simulate`
+- Throws `PayoffInputError` (never guesses) for: invalid params, non-positive prices (the future oracle rejects them too), more prices than observations, and an incomplete path while the position is still open.
+- Prices supplied after an early close are ignored (those observations never happen).
+- `missedObservationIndex` is 0-based. A price supplied for that index is contradictory and throws. If the position already closed earlier, the missed index is simply never reached.
+- A lot whose notional `tokensPerLot * strike` is not a whole number of units is rejected rather than rounded.
+**Why:** Studio and the simulator should surface bad input, not display a plausible but wrong payoff.
+
+### D-015 tsconfig target raised to ES2020
+BigInt literals (`10n`) need `target >= ES2020`; the scaffold default was ES2017. This affects type-checking only; Next transpiles via SWC.
+Note: after changing `target`, a stale `tsconfig.tsbuildinfo` kept reporting the old error until deleted. If typecheck output looks wrong after a config change, delete that file (it is git-ignored).

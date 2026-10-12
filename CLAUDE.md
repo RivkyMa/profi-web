@@ -66,7 +66,7 @@ Also: equality at B and at A, missed observation -> unwind.
 
 ## Phase status
 - [x] Phase 0: Setup
-- [ ] Phase 1: Payoff model (`src/lib/payoff.ts` + tests)
+- [x] Phase 1: Payoff model (`src/lib/payoff.ts`, `src/lib/units.ts` + tests)
 - [ ] Phase 2: Design system + 3D/animation foundation
 - [ ] Phase 3: Landing page (scroll storytelling)
 - [ ] Phase 4: Mock dashboard (`/app/*`)
