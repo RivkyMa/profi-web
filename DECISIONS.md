@@ -76,3 +76,40 @@ Fee per paying observation = `floor(L * c * feeBps / 10000)`, not `L * floor(c *
 ### D-015 tsconfig target raised to ES2020
 BigInt literals (`10n`) need `target >= ES2020`; the scaffold default was ES2017. This affects type-checking only; Next transpiles via SWC.
 Note: after changing `target`, a stale `tsconfig.tsbuildinfo` kept reporting the old error until deleted. If typecheck output looks wrong after a config change, delete that file (it is git-ignored).
+
+## Phase 2: Design system + 3D / animation foundation
+
+### D-016 Accent is cyan ("pulse"), sampled from the shield (supersedes the brass accent in D-006)
+D-006 promised to re-tune the accent against the real model. The shield is dark armor with neon cyan lines and a violet/magenta crystal; a gold accent clashed with it. Dominant saturated colors sampled from a render: magenta `#c42bbd`, cyan `#3aafae` (brighter in the neon), violet `#8d25be`, blue `#1383b7`.
+- Primary accent `pulse` (cyan `#35d8cf` family), secondary `violet`. Grounds and warm ink from D-006 are unchanged.
+- `gain` moved to a greener `#7fe39a` and `loss` to `#ff6b73` so outcome colors stay distinct from the cyan brand accent. Outcomes always carry a text label anyway.
+
+### D-017 Shield model optimization (54 MB -> 1.6 MB)
+Raw model: 1 mesh of 1.06M triangles plus three 4096/2048 JPEG textures (~200 MB VRAM). Pipeline (`npm run assets:optimize`, `scripts/optimize-model.mjs`, gltf-transform): weld -> simplify to 8% triangles (84.5k) -> textures capped at 2048 -> WebP -> meshopt.
+- Meshopt, not Draco: the decoder is bundled, so no runtime download from a CDN. `useGLTF(url, false, true)` disables Draco explicitly.
+- Textures stay at 2048 for hero close-ups (~90 MB VRAM with mips). Weak devices get the static fallback instead (D-019).
+- Raw source lives in `assets-src/` (git-ignored); only the optimized GLB is committed.
+
+### D-018 Procedural studio lighting; no postprocessing
+Lighting uses drei `<Environment>` with `<Lightformer>`s: no HDR download, works offline and under a strict CSP. `@react-three/postprocessing` is not installed: the model already carries emissive neon, and bloom would cost fill-rate on every device for a marginal gain.
+
+### D-019 Render tiers and fallbacks
+`high` (dpr up to 2), `low` (small touch devices, dpr <= 1.25), `static` (no WebGL, Save-Data, <= 2 GB device memory or <= 2 cores: static SVG shield only). First paint and SSR always use the SVG; the canvas fades in once the model is ready. `PerformanceMonitor` lowers the dpr cap on sustained slow frames.
+`prefers-reduced-motion`: no Lenis (native scroll), no float/parallax/scrub, `frameloop="demand"`.
+Rendering pauses (`frameloop="never"`) when the backdrop is not intersecting or the tab is hidden.
+
+### D-020 Model preload is a `<link rel="preload">`, not `useGLTF.preload`
+`useGLTF.preload` at module level leaves an unhandled promise rejection when the file is missing. `preloadModels()` (called from the landing layout Server Component) emits `<link rel="preload" as="fetch" crossorigin>` instead: it starts in the first HTML, in parallel with the JS, and was verified to produce exactly one GLB request.
+Trade-off: Save-Data / weak-device users still download the 1.6 MB (the tier is only known after hydration).
+
+### D-021 One scene-state object, written by GSAP, read in useFrame
+`src/lib/scene-state.ts` holds `pose`, `pointer`, `progress`, `energy`. ScrollTrigger tweens write into it; `ShieldRig` damps towards it inside `useFrame`. No React state is involved in scrolling. Phase 2's driver only spins the shield once per page as a wiring check; Phase 3 replaces it with per-section timelines.
+
+### D-022 Landing shell is a route group
+`src/app/(landing)/layout.tsx` owns the Lenis provider and the fixed canvas, so the dashboard (`/app/*`, Phase 4) gets neither. `typecheck` now runs `next typegen` first so the global `LayoutProps` types exist without a prior build.
+
+### Known issues (not fixed on purpose)
+- `THREE.Clock` deprecation warning in the console comes from `@react-three/fiber@9.8.1` internals; resolves with an R3F upgrade.
+- If the GLB is missing, the page shows the procedural placeholder correctly but R3F's loader leaves one `pageerror` (rejected load promise) in the console. Harmless to the UI; only occurs when the file is absent.
+- `Launch App (Mock)` links to `/app/earn`, which does not exist until Phase 4 (prefetch 404s in the console until then).
+- `Tooltip` is not portalled; do not place it inside `overflow: hidden` containers.

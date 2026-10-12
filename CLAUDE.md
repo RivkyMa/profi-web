@@ -16,8 +16,9 @@ PROFI is a structured-finance platform on Robinhood Chain. This repo (`profi-web
 npm run dev         # next dev
 npm run build       # next build (must pass; missing 3D assets must never break it)
 npm run lint        # eslint .
-npm run typecheck   # tsc --noEmit
-npm test            # vitest run (passes with no tests)
+npm run typecheck   # next typegen && tsc --noEmit
+npm test            # vitest run
+npm run assets:optimize   # raw GLB (assets-src/, git-ignored) -> public/models/
 ```
 
 ## Stack (don't swap without a strong reason)
@@ -67,8 +68,16 @@ Also: equality at B and at A, missed observation -> unwind.
 ## Phase status
 - [x] Phase 0: Setup
 - [x] Phase 1: Payoff model (`src/lib/payoff.ts`, `src/lib/units.ts` + tests)
-- [ ] Phase 2: Design system + 3D/animation foundation
+- [x] Phase 2: Design system + 3D/animation foundation
 - [ ] Phase 3: Landing page (scroll storytelling)
 - [ ] Phase 4: Mock dashboard (`/app/*`)
 - [ ] Phase 5: Polish + docs
 - Phases 6-7 (contracts, integration) only on request.
+
+## Code map (Phase 2)
+- `src/lib/assets.ts` asset manifest + `preloadModels()`; `scene-state.ts` shared pose; `scroll.ts` Lenis/ScrollTrigger helpers; `device.ts` render tier; `use-reduced-motion.ts`.
+- `src/components/ui/*` Button, Card, Badge, Tabs, Tooltip, Section/Container (import from `@/components/ui`).
+- `src/components/three/*` ShieldBackdrop (client wrapper, dynamic `ssr:false`), Scene, ShieldModel, ProceduralShield, ShieldFallback.
+- `src/components/landing/*` SmoothScrollProvider (the only Lenis owner), ScrollPoseDriver (replaced in Phase 3).
+- `src/app/(landing)/` landing layout (provider + canvas) and page. Dashboard will live outside this group.
+- Palette: grounds `ground-0..4`, ink `ink-1..3`, accent `pulse`, secondary `violet`, outcomes `gain` / `loss` / `steel` (DECISIONS D-016).
