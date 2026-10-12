@@ -176,3 +176,22 @@ Only small, lazy accents: the vault model in the Vaults header and a light shiel
 
 ### D-036 Links from the dashboard to `/` do not prefetch
 Prefetching the landing page pulled its RSC payload, which carries the 1.5 MB model preload hint, so the dashboard downloaded the shield for nothing (the browser warned it was preloaded but unused). Those links use `prefetch={false}`.
+
+## Phase 5: Polish and documentation
+
+### D-037 Adaptive give-up for slow devices
+Measured about 4 fps with software WebGL, which exposed that nothing degraded when a device could not keep up. `FpsGuard` (inside the canvas) gives up after two consecutive 3-second windows under 18 fps, after a 2 s warm-up, and ignores frame gaps over 1.5 s (hidden tab, resize). It is disabled under reduced motion (on-demand frames). Giving up sets a module flag so navigating within the session does not retry. The static SVG shield is now positioned like the hero pose (right of the copy on wide screens, above it on phones) so the hand-off and the fallback both look intentional.
+Trade-off: a device that is merely slow for a moment (cold shader compile) is protected by the warm-up and by needing two bad windows.
+
+### D-038 SEO, icons and error pages
+`metadataBase` comes from `NEXT_PUBLIC_SITE_URL` (falls back to localhost); title template, Open Graph and Twitter cards; canonical on the landing page; a generated 1200x630 `opengraph-image` (no external fonts or images); `icon.svg` replaces the scaffold favicon; `robots.ts` disallows `/app/`; `sitemap.ts` lists only the landing page; the dashboard layout is `noindex`. Custom `not-found` and `error` pages keep the dark theme instead of the framework defaults. Twitter falls back to `og:image`, so there is no separate `twitter-image`.
+Lighthouse SEO on `/app/*` is 63 because of `noindex`; that is intentional and documented rather than "fixed".
+
+### D-039 Accessibility pass
+Lighthouse accessibility is 100 on every page and preset. Real issues found and fixed: `aria-label` on a role-less `div` (toaster; now `role="region"`), heading level skipped in vault allocation, `<p>` as a direct child of `<dl>` in `Stat` and the vault redemption block (use `dd`), and a skip link plus `id="main"` landmarks. Earlier phases fixed contrast (inactive steps and dimmed cards no longer rely on opacity).
+
+### D-040 Dev-mode scan is part of verification
+A duplicate React key (barrier row equal to the 65% row) only appeared in `next dev`, because key warnings are stripped from production builds. Verification now includes visiting every route against a dev server and reading the console, in addition to the production build and the browser journeys.
+
+### D-041 Repo hygiene
+Removed empty-directory `.gitkeep` files and the scaffold favicon; added `engines.node >= 20.9`. `assets-src/` (raw models, over 160 MB) is git-ignored; the optimized GLBs in `public/models/` are committed so a fresh clone runs without them.
