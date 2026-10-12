@@ -1,0 +1,136 @@
+@import "tailwindcss";
+
+/*
+ * PROFI design tokens (dark, premium fintech).
+ * Tone is inspired by the reference site (near-black grounds, warm ink,
+ * brushed-metal accent, serif display + clean sans + mono for figures).
+ * Values are our own; see DECISIONS.md for the rationale.
+ */
+
+:root {
+  color-scheme: dark;
+
+  /* Layout rhythm */
+  --max: 1200px;
+  --gutter: clamp(20px, 4vw, 40px);
+  --grid-gap: clamp(16px, 2vw, 24px);
+  --section: clamp(96px, 11vw, 160px);
+  --header-h: 64px;
+
+  /* Motion */
+  --ease-premium: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-fast: 160ms;
+  --dur-hover: 300ms;
+  --dur-state: 500ms;
+  --dur-reveal: 700ms;
+}
+
+@theme {
+  /* Grounds: darkest to lifted surfaces */
+  --color-ground-0: #0a0a0b;
+  --color-ground-1: #0e0e10;
+  --color-ground-2: #131316;
+  --color-ground-3: #1a1a1e;
+  --color-ground-4: #212126;
+
+  /* Hairlines (borders / dividers) */
+  --color-hair-1: rgb(255 255 255 / 0.06);
+  --color-hair-2: rgb(255 255 255 / 0.09);
+  --color-hair-3: rgb(255 255 255 / 0.14);
+  --color-hair-4: rgb(255 255 255 / 0.24);
+
+  /* Ink (text). ink-3 is the lowest-contrast text we allow on ground-0..2. */
+  --color-ink-1: #f3f1ec;
+  --color-ink-2: #a8a59d;
+  --color-ink-3: #85837c;
+
+  /* Brass accent (brushed metal) */
+  --color-brass-hi: #f1dfb4;
+  --color-brass-light: #dfc287;
+  --color-brass: #c9a35f;
+  --color-brass-deep: #96733c;
+  --color-brass-shadow: #5a4526;
+  --color-brass-dim: rgb(201 163 95 / 0.14);
+  --color-brass-glow: rgb(201 163 95 / 0.28);
+
+  /* Semantic outcomes. Never rely on color alone: always pair with a label. */
+  --color-gain: #5fd39b; /* coupon paid / principal returned */
+  --color-loss: #e0574f; /* converted to underlying / below barrier */
+  --color-steel: #9db4c9; /* neutral info */
+
+  /* Type families (CSS variables are provided by next/font in layout.tsx) */
+  --font-display: var(--font-instrument-serif), "Iowan Old Style", Georgia, serif;
+  --font-sans: var(--font-geist-sans), system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SFMono-Regular", Menlo,
+    monospace;
+
+  /* Type scale */
+  --text-display: clamp(46px, 7.2vw, 104px);
+  --text-h2: clamp(32px, 4vw, 56px);
+  --text-h3: clamp(24px, 22px + 0.3vw, 28px);
+  --text-lead: clamp(18px, 17px + 0.2vw, 21px);
+  --text-num: clamp(32px, 26px + 1.25vw, 44px);
+
+  /* Radii */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+
+  /* Elevation */
+  --shadow-glow: 0 0 0 1px rgb(201 163 95 / 0.16),
+    0 24px 80px -24px rgb(201 163 95 / 0.28);
+  --shadow-depth: 0 1px 0 rgb(255 255 255 / 0.04) inset,
+    0 24px 60px -30px rgb(0 0 0 / 0.7);
+
+  --ease-premium: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+html {
+  background: var(--color-ground-0);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--color-ground-0);
+  color: var(--color-ink-1);
+  font-family: var(--font-sans);
+  font-size: 17px;
+  line-height: 1.55;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--color-brass-glow);
+  color: var(--color-ink-1);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-brass);
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
+}
+
+/* Lenis recommended base styles (smooth scroll provider is added in Phase 2). */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
