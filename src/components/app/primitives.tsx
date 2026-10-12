@@ -82,8 +82,10 @@ export function Stat({
       <dt className="font-mono text-[11px] tracking-[0.08em] text-ink-3 uppercase">
         {label}
       </dt>
-      <dd className="font-mono text-lg text-ink-1 tabular-nums">{value}</dd>
-      {hint && <p className="text-xs text-ink-3">{hint}</p>}
+      <dd className="flex flex-col gap-1">
+        <span className="font-mono text-lg text-ink-1 tabular-nums">{value}</span>
+        {hint && <span className="text-xs text-ink-3">{hint}</span>}
+      </dd>
     </div>
   );
 }

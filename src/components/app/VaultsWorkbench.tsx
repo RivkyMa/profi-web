@@ -32,9 +32,9 @@ function Allocation({
   const buffer = epoch.cashBufferBps;
   return (
     <div>
-      <h4 className="mb-2 font-mono text-[11px] tracking-[0.08em] text-ink-3 uppercase">
+      <h3 className="mb-2 font-mono text-[11px] tracking-[0.08em] text-ink-3 uppercase">
         Allocation
-      </h4>
+      </h3>
       <ul className="flex flex-col text-sm">
         {epoch.allocations.map((a) => {
           const m = markets.find((x) => x.id === a.marketId);
@@ -139,9 +139,9 @@ function DepositRow({
                   </span>
                 ))}
               </dd>
-              <p className="mt-1 text-xs text-ink-3">
+              <dd className="mt-1 text-xs text-ink-3">
                 Downside tokens are shared pro rata, as they are.
-              </p>
+              </dd>
             </div>
             <div className="rounded-lg bg-ground-1 p-4">
               <dt className="font-mono text-[11px] tracking-[0.08em] text-ink-3 uppercase">
@@ -150,10 +150,10 @@ function DepositRow({
               <dd className="mt-1 font-mono text-sm tabular-nums">
                 {formatAmount(outcome.cashOnly)} {QUOTE}
               </dd>
-              <p className="mt-1 text-xs text-ink-3">
+              <dd className="mt-1 text-xs text-ink-3">
                 Tokens are valued at the last observed price (mock). Their market
                 value can differ.
-              </p>
+              </dd>
             </div>
           </dl>
           <div className="flex flex-wrap gap-2">

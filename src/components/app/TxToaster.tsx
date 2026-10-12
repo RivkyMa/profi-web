@@ -69,6 +69,7 @@ export function TxToaster() {
 
   return (
     <div
+      role="region"
       aria-live="polite"
       aria-label="Transactions"
       className="pointer-events-none fixed right-4 bottom-4 z-50 w-[min(24rem,calc(100vw-2rem))]"
