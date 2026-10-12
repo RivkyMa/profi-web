@@ -16,15 +16,16 @@ interface NavigatorHints {
   connection?: { saveData?: boolean };
 }
 
+/**
+ * API presence only. Creating a probe context just to test support is slow
+ * (and wastes one of the browser's limited contexts); if the real Canvas
+ * cannot get a context, SceneBoundary falls back to the static shield.
+ */
 function hasWebGL(): boolean {
-  try {
-    const canvas = document.createElement("canvas");
-    return Boolean(
-      canvas.getContext("webgl2") || canvas.getContext("webgl"),
-    );
-  } catch {
-    return false;
-  }
+  return (
+    typeof WebGL2RenderingContext !== "undefined" ||
+    typeof WebGLRenderingContext !== "undefined"
+  );
 }
 
 function detect(): RenderTier {

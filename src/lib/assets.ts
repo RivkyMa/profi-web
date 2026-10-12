@@ -47,7 +47,13 @@ export type AssetId = keyof typeof assets;
 export function preloadModels(): void {
   for (const asset of Object.values(assets)) {
     if (asset.preload) {
-      preload(asset.url, { as: "fetch", crossOrigin: "anonymous" });
+      // Low priority: a 1.5 MB model must not compete with the CSS/JS that
+      // paints the text, or slow connections wait on it before first paint.
+      preload(asset.url, {
+        as: "fetch",
+        crossOrigin: "anonymous",
+        fetchPriority: "low",
+      });
     }
   }
 }
