@@ -29,8 +29,15 @@ export const assets = {
     preload: true,
     placeholder: "shield",
   },
-  // TODO(assets): register new models here (coin, vault, ...). Until their
-  // GLB exists they render as the "generic" placeholder.
+  vault: {
+    url: "/models/vault.glb",
+    height: 2.5,
+    // Shown in a small canvas lower on the page; fetch it only when needed.
+    preload: false,
+    placeholder: "generic",
+  },
+  // TODO(assets): register new models here (coin, ...). Until their GLB
+  // exists they render as the "generic" placeholder.
 } as const satisfies Record<string, ModelAsset>;
 
 export type AssetId = keyof typeof assets;

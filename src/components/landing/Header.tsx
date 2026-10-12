@@ -20,7 +20,7 @@ export function Header() {
   };
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-hair-1 bg-gradient-to-b from-ground-0/90 to-ground-0/40">
+    <header className="fixed inset-x-0 top-0 z-50 border-b border-hair-1 bg-ground-0/85 backdrop-blur-md">
       <div className="mx-auto flex h-[var(--header-h)] w-full max-w-[var(--max)] items-center justify-between px-[var(--gutter)]">
         <Link
           href="/"

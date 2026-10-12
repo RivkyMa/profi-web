@@ -7,6 +7,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import Link from "next/link";
 import { Section } from "@/components/ui";
+import { ModelMedia } from "@/components/three/ModelMedia";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
@@ -40,6 +41,7 @@ const PRODUCTS = [
     provide: "Stablecoin, within an epoch deposit window",
     receive: "Epoch shares, redeemable in cash or in kind after settlement",
     risk: "You carry the downside of every market the vault holds.",
+    model: "vault",
   },
   {
     name: "Studio",
@@ -52,6 +54,14 @@ const PRODUCTS = [
     risk: "Parameters you pick can leave a market unattractive or unfilled.",
   },
 ] as const;
+
+function IconArt({ Icon }: { Icon: typeof Coins }) {
+  return (
+    <div className="absolute inset-0 flex items-center justify-center text-pulse">
+      <Icon className="size-14 stroke-[1.25]" aria-hidden />
+    </div>
+  );
+}
 
 /**
  * Four product cards. Entrance is scrubbed (cards rise at different rates)
@@ -150,13 +160,29 @@ export function ProductsSection() {
                       "radial-gradient(360px circle at var(--mx) var(--my), rgb(53 216 207 / 0.12), transparent 70%)",
                   }}
                 />
-                <div className="relative flex items-start justify-between">
-                  <span className="flex size-11 items-center justify-center rounded-lg border border-hair-3 bg-ground-3 text-pulse">
-                    <Icon className="size-5" aria-hidden />
-                  </span>
+                <div className="relative">
+                  <div className="relative h-40 overflow-hidden rounded-lg border border-hair-1 bg-ground-1">
+                    <div
+                      aria-hidden
+                      className="absolute inset-0"
+                      style={{
+                        background:
+                          "radial-gradient(60% 80% at 50% 100%, rgb(53 216 207 / 0.10), transparent 70%)",
+                      }}
+                    />
+                    {"model" in p ? (
+                      <ModelMedia
+                        assetId={p.model}
+                        className="h-full w-full"
+                        fallback={<IconArt Icon={Icon} />}
+                      />
+                    ) : (
+                      <IconArt Icon={Icon} />
+                    )}
+                  </div>
                   <ArrowUpRight
                     aria-hidden
-                    className="size-5 text-ink-3 transition-[color,transform] duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-pulse"
+                    className="absolute top-3 right-3 size-5 text-ink-3 transition-[color,transform] duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-pulse"
                   />
                 </div>
                 <div className="relative">
