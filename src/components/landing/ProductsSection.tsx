@@ -7,7 +7,6 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import Link from "next/link";
 import { Section } from "@/components/ui";
-import { ModelMedia } from "@/components/three/ModelMedia";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
@@ -41,7 +40,6 @@ const PRODUCTS = [
     provide: "Stablecoin, within an epoch deposit window",
     receive: "Epoch shares, redeemable in cash or in kind after settlement",
     risk: "You carry the downside of every market the vault holds.",
-    model: "vault",
   },
   {
     name: "Studio",
@@ -170,15 +168,7 @@ export function ProductsSection() {
                           "radial-gradient(60% 80% at 50% 100%, rgb(53 216 207 / 0.10), transparent 70%)",
                       }}
                     />
-                    {"model" in p ? (
-                      <ModelMedia
-                        assetId={p.model}
-                        className="h-full w-full"
-                        fallback={<IconArt Icon={Icon} />}
-                      />
-                    ) : (
-                      <IconArt Icon={Icon} />
-                    )}
+                    <IconArt Icon={Icon} />
                   </div>
                   <ArrowUpRight
                     aria-hidden

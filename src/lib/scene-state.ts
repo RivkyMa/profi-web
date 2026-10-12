@@ -35,6 +35,13 @@ export const sceneState = {
    * own scrubbed timelines; the choreography drives `pose`.
    */
   nudge: { x: 0, y: 0, scale: 0, rotX: 0, rotY: 0 },
+  /**
+   * The vault, shown big in its own landing section. It shares the canvas with
+   * the shield and trades places with it. scale 0 means hidden.
+   */
+  vault: { x: 0, y: 0, scale: 0, rotY: 0 },
+  /** True once the vault section is near, so its model starts loading. */
+  vaultWanted: false,
   /** Pointer position normalized to -1..1 on both axes. */
   pointer: { x: 0, y: 0 },
   /** Overall page scroll progress, 0..1. */
@@ -48,6 +55,8 @@ export function resetSceneState(): void {
   sceneState.pointer.x = 0;
   sceneState.pointer.y = 0;
   Object.assign(sceneState.nudge, { x: 0, y: 0, scale: 0, rotX: 0, rotY: 0 });
+  Object.assign(sceneState.vault, { x: 0, y: 0, scale: 0, rotY: 0 });
+  sceneState.vaultWanted = false;
   sceneState.progress = 0;
   sceneState.energy = 0;
 }

@@ -7,6 +7,13 @@ import { resetSceneState, sceneState } from "@/lib/scene-state";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
+interface VaultLook {
+  x: number;
+  y: number;
+  scale: number;
+  rotY: number;
+}
+
 interface Look {
   x: number;
   y: number;
@@ -15,6 +22,8 @@ interface Look {
   rotX: number;
   /** Opacity of the whole canvas (the shield dims behind dense content). */
   dim: number;
+  /** The vault object; scale 0 hides it. */
+  vault: VaultLook;
 }
 
 interface Stop {
@@ -24,52 +33,88 @@ interface Stop {
   narrow: Look;
 }
 
+const NO_VAULT: VaultLook = { x: 0, y: 0, scale: 0, rotY: 0 };
+
+type ShieldLook = Omit<Look, "vault">;
+const look = (shield: ShieldLook, vault: VaultLook = NO_VAULT): Look => ({
+  ...shield,
+  vault,
+});
+
 /**
- * Where the shield sits for each section, in document order. Between two
- * stops the look is interpolated by scroll position, so the shield is always
- * a pure function of the page: no timeline fights, correct after refresh and
- * when scrolling backwards.
+ * Where the shield (and, in its own section, the vault) sits for each
+ * section, in document order. Between two stops the look is interpolated by
+ * scroll position, so the scene is always a pure function of the page: no
+ * timeline fights, correct after refresh and when scrolling backwards.
+ *
+ * The vault keeps the same x / y / rotation on both sides of its section and
+ * only its scale changes, so it grows in place instead of sliding across.
  */
 const STOPS: readonly Stop[] = [
   {
     id: "hero",
-    wide: { x: 1.9, y: 0, scale: 1, rotY: 0, rotX: 0, dim: 1 },
-    narrow: { x: 0, y: 0.9, scale: 0.85, rotY: 0, rotX: 0, dim: 1 },
+    wide: look({ x: 1.9, y: 0, scale: 1, rotY: 0, rotX: 0, dim: 1 }),
+    narrow: look({ x: 0, y: 0.9, scale: 0.85, rotY: 0, rotX: 0, dim: 1 }),
   },
   {
     id: "idea",
-    wide: { x: 0, y: 0.1, scale: 1.05, rotY: 0, rotX: 0, dim: 0.95 },
-    narrow: { x: 0, y: 0.2, scale: 0.8, rotY: 0, rotX: 0, dim: 0.28 },
+    wide: look({ x: 0, y: 0.1, scale: 1.05, rotY: 0, rotX: 0, dim: 0.95 }),
+    narrow: look({ x: 0, y: 0.2, scale: 0.8, rotY: 0, rotX: 0, dim: 0.28 }),
   },
   {
     id: "how",
-    wide: { x: 2.4, y: 0, scale: 0.95, rotY: 0.35, rotX: 0, dim: 0.9 },
-    narrow: { x: 0, y: 1.2, scale: 0.6, rotY: 0.35, rotX: 0, dim: 0.22 },
+    wide: look({ x: 2.4, y: 0, scale: 0.95, rotY: 0.35, rotX: 0, dim: 0.9 }),
+    narrow: look({ x: 0, y: 1.2, scale: 0.6, rotY: 0.35, rotX: 0, dim: 0.22 }),
   },
   {
     id: "products",
-    wide: { x: 0, y: 0, scale: 0.8, rotY: -0.5, rotX: 0.1, dim: 0.16 },
-    narrow: { x: 0, y: 0, scale: 0.7, rotY: -0.5, rotX: 0.1, dim: 0.12 },
+    wide: look(
+      { x: 0, y: 0, scale: 0.8, rotY: -0.5, rotX: 0.1, dim: 0.16 },
+      { x: 1.8, y: 0, scale: 0, rotY: -0.9 },
+    ),
+    narrow: look(
+      { x: 0, y: 0, scale: 0.7, rotY: -0.5, rotX: 0.1, dim: 0.12 },
+      { x: 0, y: 0.4, scale: 0, rotY: -0.9 },
+    ),
+  },
+  {
+    id: "vaults",
+    // The shield disappears (scale ~0) while the vault takes over. On phones
+    // the vault is a faint backdrop behind the copy, so the canvas is dimmer.
+    wide: look(
+      { x: 0, y: 0, scale: 0.001, rotY: 0.5, rotX: 0, dim: 0.95 },
+      { x: 1.8, y: 0, scale: 0.72, rotY: 0.25 },
+    ),
+    narrow: look(
+      { x: 0, y: 0, scale: 0.001, rotY: 0.5, rotX: 0, dim: 0.3 },
+      { x: 0, y: 0.4, scale: 0.85, rotY: 0.25 },
+    ),
   },
   {
     id: "payoff",
-    wide: { x: 3.3, y: 1.3, scale: 0.5, rotY: 0.6, rotX: 0, dim: 0.22 },
-    narrow: { x: 0, y: 1.5, scale: 0.4, rotY: 0.6, rotX: 0, dim: 0.1 },
+    wide: look(
+      { x: 3.3, y: 1.3, scale: 0.5, rotY: 0.6, rotX: 0, dim: 0.22 },
+      { x: 1.8, y: 0, scale: 0, rotY: 1.1 },
+    ),
+    narrow: look(
+      { x: 0, y: 1.5, scale: 0.4, rotY: 0.6, rotX: 0, dim: 0.1 },
+      { x: 0, y: 0.4, scale: 0, rotY: 1.1 },
+    ),
   },
   {
     id: "risks",
-    wide: { x: -3.3, y: -0.8, scale: 0.55, rotY: Math.PI * 0.9, rotX: 0, dim: 0.2 },
-    narrow: { x: 0, y: -1.6, scale: 0.4, rotY: Math.PI * 0.9, rotX: 0, dim: 0.1 },
+    wide: look({ x: -3.3, y: -0.8, scale: 0.55, rotY: Math.PI * 0.9, rotX: 0, dim: 0.2 }),
+    narrow: look({ x: 0, y: -1.6, scale: 0.4, rotY: Math.PI * 0.9, rotX: 0, dim: 0.1 }),
   },
   {
     id: "gates",
-    wide: { x: 3.2, y: 0.2, scale: 0.6, rotY: Math.PI * 1.5, rotX: 0, dim: 0.28 },
-    narrow: { x: 0, y: 0.4, scale: 0.45, rotY: Math.PI * 1.5, rotX: 0, dim: 0.1 },
+    wide: look({ x: 3.2, y: 0.2, scale: 0.6, rotY: Math.PI * 1.5, rotX: 0, dim: 0.28 }),
+    narrow: look({ x: 0, y: 0.4, scale: 0.45, rotY: Math.PI * 1.5, rotX: 0, dim: 0.1 }),
   },
   {
     id: "cta",
-    wide: { x: 0, y: 1.2, scale: 0.78, rotY: Math.PI * 2, rotX: 0, dim: 1 },
-    narrow: { x: 0, y: 1.3, scale: 0.7, rotY: Math.PI * 2, rotX: 0, dim: 1 },
+    wide: look({ x: 0, y: 1.2, scale: 0.78, rotY: Math.PI * 2, rotX: 0, dim: 1 }),
+    narrow: look({ x: 0, y: 1.3, scale: 0.7, rotY: Math.PI * 2, rotX: 0, dim: 1 }),
   },
 ];
 
@@ -84,6 +129,12 @@ function lerpLook(a: Look, b: Look, t: number): Look {
     rotY: mix(a.rotY, b.rotY, t),
     rotX: mix(a.rotX, b.rotX, t),
     dim: mix(a.dim, b.dim, t),
+    vault: {
+      x: mix(a.vault.x, b.vault.x, t),
+      y: mix(a.vault.y, b.vault.y, t),
+      scale: mix(a.vault.scale, b.vault.scale, t),
+      rotY: mix(a.vault.rotY, b.vault.rotY, t),
+    },
   };
 }
 
@@ -144,6 +195,18 @@ export function ShieldChoreography() {
           pose.scale = look.scale;
           pose.rotY = look.rotY;
           pose.rotX = look.rotX;
+
+          const { vault } = sceneState;
+          vault.x = look.vault.x;
+          vault.y = look.vault.y;
+          vault.scale = look.vault.scale;
+          vault.rotY = look.vault.rotY;
+
+          // Start fetching the vault model a couple of screens before its section.
+          const vaultsEl = document.getElementById("vaults");
+          if (vaultsEl && vaultsEl.getBoundingClientRect().top < vh * 2.2) {
+            sceneState.vaultWanted = true;
+          }
         };
 
         const trigger = ScrollTrigger.create({

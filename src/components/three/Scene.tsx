@@ -21,6 +21,52 @@ export interface SceneProps {
 
 const damp = THREE.MathUtils.damp;
 
+const noop = () => {};
+
+/**
+ * The vault model. It stays unmounted (no fetch, no GPU memory) until the
+ * choreography says the vault section is near, and is not drawn while its
+ * scale is ~0. Same damping and parallax as the shield.
+ */
+function VaultRig({ animate }: { animate: boolean }) {
+  const group = useRef<THREE.Group>(null);
+  const [active, setActive] = useState(false);
+
+  useFrame((state, delta) => {
+    if (!active && sceneState.vaultWanted) setActive(true);
+    const g = group.current;
+    if (!g) return;
+
+    const { vault, pointer } = sceneState;
+    const live = animate ? 1 : 0;
+    const t = state.clock.elapsedTime;
+    const fit = THREE.MathUtils.clamp(state.viewport.width / 3.4, 0.55, 1);
+
+    g.position.x = damp(g.position.x, vault.x + pointer.x * 0.1 * live, 4, delta);
+    g.position.y = damp(
+      g.position.y,
+      vault.y + Math.sin(t * 0.8) * 0.05 * live,
+      4,
+      delta,
+    );
+    g.rotation.y = damp(
+      g.rotation.y,
+      vault.rotY + pointer.x * 0.25 * live + Math.sin(t * 0.3) * 0.08 * live,
+      4,
+      delta,
+    );
+    g.rotation.x = damp(g.rotation.x, -pointer.y * 0.1 * live, 4, delta);
+    g.scale.setScalar(damp(g.scale.x, vault.scale * fit, 4, delta));
+    g.visible = g.scale.x > 0.01;
+  });
+
+  return (
+    <group ref={group} scale={0.0001} visible={false}>
+      {active && <ShieldModel assetId="vault" onLoaded={noop} />}
+    </group>
+  );
+}
+
 const MIN_FPS = 18;
 const WINDOW_S = 3;
 
@@ -173,6 +219,7 @@ export default function Scene({
       <ShieldRig animate={animate}>
         <ShieldModel onLoaded={onReady} />
       </ShieldRig>
+      <VaultRig animate={animate} />
     </Canvas>
   );
 }

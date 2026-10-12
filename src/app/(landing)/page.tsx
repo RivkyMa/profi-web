@@ -8,12 +8,13 @@ import { LaunchGates } from "@/components/landing/LaunchGates";
 import { PayoffExplorer } from "@/components/landing/PayoffExplorer";
 import { ProductsSection } from "@/components/landing/ProductsSection";
 import { RiskSection } from "@/components/landing/RiskSection";
+import { VaultsShowcase } from "@/components/landing/VaultsShowcase";
 
 export const metadata: Metadata = { alternates: { canonical: "/" } };
 
 /**
  * Landing page. Section ids (hero, idea, how, products, payoff, risks, gates,
- * cta) are the stops used by ShieldChoreography; keep them in sync.
+ * cta, plus vaults) are the stops used by ShieldChoreography; keep them in sync.
  */
 export default function Home() {
   return (
@@ -23,6 +24,7 @@ export default function Home() {
         <IdeaSection />
         <HowItWorks />
         <ProductsSection />
+        <VaultsShowcase />
         <PayoffExplorer />
         <RiskSection />
         <LaunchGates />
