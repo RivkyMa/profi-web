@@ -147,3 +147,32 @@ Raw model: 109 MB (104 MiB), 2.82M triangles, three 4096/2048 JPEGs. Optimized w
 - **Separate small canvas, not a second object in the background canvas.** A card sits in the normal flow with a rounded border; drei `View` would need a see-through DOM window (the DOM is above the canvas), an opaque per-view background that pokes out of rounded corners, and it would be dimmed by the choreography and break under `frameloop="demand"`. A tiny dedicated canvas (`MiniModelCanvas`) is isolated, rounded by its container and cheap: 1024 px textures, about 7 MB of VRAM. The fixed background canvas is still the only large one.
 - **Progressive:** `ModelMedia` always renders a static icon; the canvas mounts only on the `high` tier without reduced motion, only once the slot is within 300 px of the viewport, pauses off-screen, and fades in over the icon after the model loads. No `preload` hint (`preload: false`), so the 1.2 MB is not part of first load (verified: requested only after scrolling to the card).
 - Bugs found while wiring it: `relative` and `absolute` classes on one element resolved to `relative` and collapsed the slot to 0 height, so the canvas never measured; `ModelMedia` now always owns `relative` and the caller supplies size.
+
+## Phase 4: Mock dashboard
+
+### D-030 Dashboard shell and routing
+`/app/*` lives in `src/app/app/`, outside the `(landing)` route group, so it has no Lenis, no ScrollTrigger and no background canvas. `AppShell` is a permanent "Testnet / Mock data" strip, sidebar (top tabs under 1024 px), topbar with the mock wallet, and a polite live-region toaster for transactions.
+Because Cache Components keeps visited routes mounted (`Activity`), a page you left is still in the DOM, hidden. This is what makes demo state survive navigation, but it also means DOM queries must be scoped to visible elements (the browser journey uses `getByRole`, which ignores hidden content).
+
+### D-031 Mock domain and state
+- `lib/mock/markets.ts`: six seeded markets across all four statuses, per-lot `PayoffParams`, fixed dates relative to a pinned `DEMO_TODAY`, and the Studio template bounds. Tickers are labels for mock tokens ("Tokenized TSLA (mock)"), not real instruments.
+- `lib/store.ts` (zustand): wallet (mock balances), markets, Earn/Protect positions, vault epochs/deposits, tx list. Every action is a simulated transaction: pending, then success or error. Preconditions are checked before AND after the delay (state can change while pending). A "Fail next transaction" switch makes the next one revert so error states can be demoed on purpose.
+- A resolved market stores only `resolution: ScenarioId`; the numbers are recomputed from the payoff model, never stored.
+- "Mock time machine" (fast-forward market, advance epoch) exists so the journey Studio -> Earn/Protect -> Vault -> Portfolio is demoable without waiting for dates. It assumes the other side was fully matched; the UI says so.
+- Position state is derived (`lib/portfolio.ts`): Locked collateral (open market) vs Claimable (resolved, unclaimed) vs Claimed; normal settlement and unwind carry different labels and an explanation.
+
+### D-032 Vault epochs
+Shares are 1 per mUSD deposited. At redemption each allocation behaves like Earn lots in that market: the per-lot result is scaled by `allocated / principal` with integer division (rounding down), plus the cash buffer. Redemption options: in kind (cash plus downside tokens pro rata) or in cash (tokens valued at the last observed price, which is a mock convention and is labelled as such).
+
+### D-033 Studio template
+Bounds: barrier 40% to 90% of strike, autocall off or 100% to 120%, coupon 0.2% to 3% of principal per observation, tenor 4/6/12 observations, cap 10 to 1,000 lots, 1 to 1,000 tokens per lot, fixed 5% fee. Validation is shown inline and as a list; creation is disabled until valid. The preview uses the same `PayoffSimulator` and the four generic scenario paths (`lib/scenarios.ts`) as every market.
+
+### D-034 Lessons recorded (both were real bugs, found by driving the UI)
+- `<input type="number" min=1 step=100>` makes 1000 natively invalid (valid values are 1, 101, ...), so the browser silently blocked submit. Forms now use `noValidate` and our own validation, and `min` is chosen to agree with `step`.
+- A component that sets its own `display` (Badge: `inline-flex`) cannot be hidden by also passing `hidden`: whichever utility is later in the CSS wins, and here `inline-flex` did, pushing the mobile topbar wider than the screen. Visibility is now controlled by a wrapper element.
+
+### D-035 3D accents in the dashboard
+Only small, lazy accents: the vault model in the Vaults header and a light shield (`shield-mini.glb`, 512 px textures, 0.38 MB) in the empty portfolio. The full shield's 2048 px textures cost about 90 MB of VRAM, which a header-sized canvas must not. Everything else uses icons. Same rules as D-029: high tier only, no reduced motion, mounted near the viewport, paused off-screen.
+
+### D-036 Links from the dashboard to `/` do not prefetch
+Prefetching the landing page pulled its RSC payload, which carries the 1.5 MB model preload hint, so the dashboard downloaded the shield for nothing (the browser warned it was preloaded but unused). Those links use `prefetch={false}`.

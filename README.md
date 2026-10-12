@@ -29,7 +29,8 @@ Next.js 16 (App Router, Turbopack, Cache Components), React 19, TypeScript (stri
 - **Payoff model** (`src/lib/payoff.ts`): pure, integer-only (bigint, 6 decimals) simulation of every terminal outcome, with the spec's test vectors as unit tests.
 - **Landing page** (`src/app/(landing)`): hero, core idea (pinned), how a market works (pinned five-stage timeline), four products (tilt cards), interactive payoff explorer, risks, launch gates, footer.
 - **One fixed 3D canvas** behind the page. The shield is driven by ScrollTrigger through shared state (`src/lib/scene-state.ts`), not React renders.
-- **Design system** (`src/components/ui`): Button, Card, Badge, Tabs, Tooltip, Section.
+- **Design system** (`src/components/ui`): Button, Card, Badge, Tabs, Tooltip, Section, form controls, payoff chart and outcome cards.
+- **Mock dashboard** (`/app/*`): Earn, Protect, Vaults, Studio and Portfolio on local zustand state, with simulated transactions (see below).
 
 ## Landing page behavior
 
@@ -39,10 +40,30 @@ Next.js 16 (App Router, Turbopack, Cache Components), React 19, TypeScript (stri
 - Weak devices (no WebGL, Save-Data, 2 GB or less memory, 2 cores or fewer) get a static shield instead of the canvas. Text is never blocked by model loading; if the GLB is missing a procedural placeholder is rendered.
 - Mock data lives in `src/lib/mock/`. The payoff explorer uses the spec's reference market, so every number on the page is reproducible from `payoff.test.ts`.
 
+## Mock dashboard
+
+Everything under `/app` is mock data in memory; reloading the page resets it ("Reset demo data" in the sidebar does too).
+
+| Page | What you can do |
+| --- | --- |
+| `/app/earn` | Filter markets, read every term and all four terminal outcomes, deposit lots (with a risk acknowledgement), see your position |
+| `/app/protect` | Deposit token plus premium reserve; shows maximum protection cost and what Protect does not cover |
+| `/app/vaults` | Epochs with deposit window, cap, allocation and cash buffer; deposit, cancel, redeem in kind or in cash |
+| `/app/studio` | Create a market from a bounded template; live validation; payoff preview with all outcomes |
+| `/app/portfolio` | Claimable versus locked collateral; normal settlement versus unwind; claim |
+
+**Demo path (about two minutes):** Connect Wallet (Mock) → Studio: Create market → Earn: deposit → Protect: deposit → use the *mock time machine* on that market to resolve it (try "Matures below barrier") → Portfolio: claim → Vaults: deposit, advance the epoch twice, redeem. Tick "Fail next transaction" in the topbar to see an error state. In an empty portfolio, "Load demo portfolio" seeds positions in settled and unwound markets.
+
 ## 3D assets
 
 Models are registered in `src/lib/assets.ts`. To add one: optimize it with `scripts/optimize-model.mjs`, drop the result in `public/models/`, and add an entry. Until the file exists the scene shows the procedural placeholder named in the entry.
-`shield.glb` was reduced from 54 MB (1.06M triangles, 4096 px textures) to 1.6 MB (84.5k triangles, 2048 px WebP, meshopt).
+| Model | Raw | Optimized | Used for |
+| --- | --- | --- | --- |
+| `shield.glb` | 54 MB, 1.06M triangles, 4096 px textures | 1.6 MB, 84.5k triangles, 2048 px WebP, meshopt | Landing background scene |
+| `vault.glb` | 109 MB, 2.82M triangles | 1.2 MB, 85k triangles, 1024 px | Vaults card and Vaults page header |
+| `shield-mini.glb` | (from the shield) | 0.4 MB, 512 px | Portfolio empty state |
+
+Small accents use a separate tiny canvas (`ModelMedia`): it mounts only near the viewport, on capable devices, and falls back to an icon otherwise.
 
 ## Performance
 
@@ -67,7 +88,7 @@ How we got there (mobile TBT 12.2 s, desktop 1.1 s at the first measurement):
 - hero text never starts transparent, so it is the LCP element and paints at first render;
 - inactive pinned steps are muted by color instead of opacity (contrast stays at or above 4.5:1).
 
-What is still open (Phase 5): TBT is dominated by hydrating the full landing tree plus scene initialization (shader compile, texture decode). Candidates: hydrate below-the-fold sections on visibility, trim the three/drei import surface, and test on a real GPU device. The remaining console error is a prefetch of `/app/earn`, which the dashboard phase adds.
+What is still open (Phase 5): TBT is dominated by hydrating the full landing tree plus scene initialization (shader compile, texture decode). Candidates: hydrate below-the-fold sections on visibility, trim the three/drei import surface, and test on a real GPU device. The dashboard routes exist now, so the earlier prefetch 404 in the console is gone.
 
 ## Project notes
 
