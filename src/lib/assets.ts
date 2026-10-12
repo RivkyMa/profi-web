@@ -36,6 +36,15 @@ export const assets = {
     preload: false,
     placeholder: "generic",
   },
+  // Light variant (512 px textures, ~32k triangles) for small UI accents. The
+  // full shield's 2048 px textures cost ~90 MB of VRAM, too much for a
+  // header-sized canvas.
+  shieldMini: {
+    url: "/models/shield-mini.glb",
+    height: 2.5,
+    preload: false,
+    placeholder: "shield",
+  },
   // TODO(assets): register new models here (coin, ...). Until their GLB
   // exists they render as the "generic" placeholder.
 } as const satisfies Record<string, ModelAsset>;
