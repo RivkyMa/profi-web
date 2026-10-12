@@ -20,35 +20,6 @@ export const referenceMarket: PayoffParams = {
   feeBps: 500,
 };
 
-export interface InterimPath {
-  id: "steady" | "dip" | "slide";
-  label: string;
-  description: string;
-  /** Prices at observations 1 to 3. The final price comes from the slider. */
-  prices: readonly bigint[];
-}
-
-export const interimPaths: readonly InterimPath[] = [
-  {
-    id: "steady",
-    label: "Steady",
-    description: "Observations 1-3 stay above the barrier",
-    prices: [u("94"), u("78"), u("70")],
-  },
-  {
-    id: "dip",
-    label: "Dip, then recover",
-    description: "Observation 2 dips below the barrier",
-    prices: [u("94"), u("60"), u("78")],
-  },
-  {
-    id: "slide",
-    label: "Keeps falling",
-    description: "Observation 3 is already below the barrier",
-    prices: [u("94"), u("78"), u("60")],
-  },
-];
-
 export interface TerminalScenario {
   id: "autocall" | "above" | "below" | "unwind";
   title: string;
