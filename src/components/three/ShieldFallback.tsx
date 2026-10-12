@@ -17,7 +17,9 @@ export function ShieldFallback({ className }: { className?: string }) {
       viewBox="-1 -1.15 2 2.3"
       aria-hidden
       focusable="false"
-      className={cn("h-auto w-full", className)}
+      // Width comes from the caller; w-full is only the default. Putting both
+      // on one element lets whichever utility sorts later win, not the caller.
+      className={cn("h-auto", className ?? "w-full")}
     >
       <defs>
         <linearGradient id={face} x1="0" y1="0" x2="1" y2="1">

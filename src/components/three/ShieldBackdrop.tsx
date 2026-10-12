@@ -1,7 +1,13 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { cn } from "@/lib/cn";
 import { useRenderTier } from "@/lib/device";
 import { refreshScrollTriggers } from "@/lib/scroll";
@@ -18,6 +24,18 @@ const Scene = dynamic(() => import("./Scene"), { ssr: false });
 // the session (navigating away and back must not retry and stutter again).
 let sceneGaveUp = false;
 
+const noop = () => {};
+const noSubscribe = () => noop;
+
+/** "?3d=on" forces the scene on a device that was downgraded to static. */
+function useForcedScene(): boolean {
+  return useSyncExternalStore(
+    noSubscribe,
+    () => new URLSearchParams(window.location.search).get("3d") === "on",
+    () => false,
+  );
+}
+
 /**
  * The ONE fixed canvas behind the landing content.
  *
@@ -26,7 +44,10 @@ let sceneGaveUp = false;
  * parallax is read from window instead.
  */
 export function ShieldBackdrop() {
-  const tier = useRenderTier();
+  const detectedTier = useRenderTier();
+  const forced = useForcedScene();
+  // Forcing only lifts a downgrade; pending (SSR / first paint) stays pending.
+  const tier = forced && detectedTier === "static" ? "high" : detectedTier;
   const reduced = useReducedMotion();
   const containerRef = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);
@@ -101,14 +122,15 @@ export function ShieldBackdrop() {
   }, []);
 
   const handleGiveUp = useCallback(() => {
+    if (forced) return;
     sceneGaveUp = true;
     setGaveUp(true);
-  }, []);
+  }, [forced]);
 
   const showScene =
-    armed && !gaveUp && (tier === "high" || tier === "low");
+    armed && (!gaveUp || forced) && (tier === "high" || tier === "low");
   // The static shield shows until the scene is ready, and again if it gave up.
-  const staticVisible = !ready || gaveUp;
+  const staticVisible = !ready || (gaveUp && !forced);
 
   return (
     <div
