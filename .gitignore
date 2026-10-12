@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# keep the env template tracked (env files above are ignored)
+!.env.example
+
+# raw/source 3D assets that are not served (see DECISIONS.md)
+/assets-src/
