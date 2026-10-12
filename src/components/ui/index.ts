@@ -10,3 +10,8 @@ export { Tabs, TabsContent, TabsList, TabsTrigger } from "./Tabs";
 export type { TabsContentProps, TabsProps, TabsTriggerProps } from "./Tabs";
 export { Tooltip } from "./Tooltip";
 export type { TooltipProps } from "./Tooltip";
+export { Checkbox, NumberField, SelectField } from "./Field";
+export type { NumberFieldProps, SelectFieldProps } from "./Field";
+export { PayoffChart } from "./PayoffChart";
+export type { CurvePoint } from "./PayoffChart";
+export { CLOSURE_LABEL, OutcomeCard, Row, SidePanel, holding } from "./PayoffOutcomes";

@@ -16,6 +16,8 @@ interface PayoffChartProps {
   strike: number;
   step: number;
   label: string;
+  /** x-axis tick values. Defaults to the min, strike and max. */
+  ticks?: readonly number[];
 }
 
 const SERIES = [
@@ -28,6 +30,8 @@ const niceStep = (range: number) => {
   const options = [500, 1000, 2000, 2500, 5000, 10000];
   return options.find((o) => o >= target) ?? options[options.length - 1];
 };
+
+const fmt = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1));
 
 const signed = (n: number) =>
   `${n > 0 ? "+" : n < 0 ? "-" : ""}${Math.abs(n).toLocaleString("en-US")}`;
@@ -50,6 +54,7 @@ export function PayoffChart({
   strike,
   step,
   label,
+  ticks,
 }: PayoffChartProps) {
   const figureRef = useRef<HTMLElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -187,7 +192,7 @@ export function PayoffChart({
         ))}
 
         {/* x labels */}
-        {[xMin, 50, strike, xMax].map((p) => (
+        {(ticks ?? [xMin, strike, xMax]).map((p) => (
           <text
             key={p}
             x={x(p)}
@@ -195,14 +200,22 @@ export function PayoffChart({
             textAnchor="middle"
             className="fill-ink-3 font-mono text-[11px]"
           >
-            {p}
+            {Number.isInteger(p) ? p : p.toFixed(1)}
           </text>
         ))}
 
         {/* Reference lines: barrier and strike */}
         {[
-          { at: barrier, text: `Barrier ${barrier}`, anchor: "end" as const },
-          { at: strike, text: `Strike ${strike}`, anchor: "middle" as const },
+          {
+            at: barrier,
+            text: `Barrier ${fmt(barrier)}`,
+            anchor: "end" as const,
+          },
+          {
+            at: strike,
+            text: `Strike ${fmt(strike)}`,
+            anchor: "middle" as const,
+          },
         ].map((ref) => (
           <g key={ref.text}>
             <line
