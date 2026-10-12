@@ -10,7 +10,7 @@ import {
 import { cn } from "@/lib/cn";
 import { formatSigned } from "@/lib/format";
 import { deriveTerms, simulate, type PayoffParams } from "@/lib/payoff";
-import { valuate } from "@/lib/payoff-view";
+import { tablePrices, valuate } from "@/lib/payoff-view";
 import { interimPrices, type InterimKind } from "@/lib/scenarios";
 
 const MIN_PCT = 30;
@@ -80,10 +80,7 @@ export function PayoffSimulator({
   const currentPrice = toNumber(at);
   const active = KINDS.find((k) => k.id === kind) ?? KINDS[0];
 
-  const tableRows = [40, 55, 60, 65, 70, 80, 100, 120]
-    .map((x) => priceAt(strike, x))
-    .concat(terms.barrier - 10_000n, terms.barrier)
-    .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+  const tableRows = tablePrices(strike, terms.barrier);
 
   return (
     <div className="flex flex-col gap-8">

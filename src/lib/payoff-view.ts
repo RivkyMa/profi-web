@@ -45,3 +45,18 @@ export function valuate(
     premiumPaid: result.coupons.gross,
   };
 }
+
+/**
+ * Final prices shown in the "view as a table" rows: a few round percentages of
+ * strike plus the barrier and one cent below it. The barrier often equals one
+ * of the percentages (65% of 100), so rows are de-duplicated by value and
+ * sorted: callers use the price as a React key.
+ */
+export function tablePrices(strike: bigint, barrier: bigint): bigint[] {
+  const pcts = [40, 55, 60, 65, 70, 80, 100, 120];
+  const prices = pcts.map((p) => (strike * BigInt(p)) / 100n);
+  prices.push(barrier, barrier - 10_000n);
+  return Array.from(new Set(prices))
+    .filter((p) => p > 0n)
+    .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+}

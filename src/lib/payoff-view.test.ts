@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { simulate, type PayoffParams } from "./payoff";
-import { valuate } from "./payoff-view";
+import { tablePrices, valuate } from "./payoff-view";
 import { parseUnits as u } from "./units";
 
 const BASE: PayoffParams = {
@@ -49,5 +49,23 @@ describe("valuate", () => {
     const v = valuate(BASE, r, u("78"));
     expect(v.earnValue).toBe(u("10095"));
     expect(v.earnPnl).toBe(u("95"));
+  });
+});
+
+describe("tablePrices", () => {
+  it("returns unique, ascending prices even when the barrier equals a percent row", () => {
+    // 65% barrier of a 100 strike is exactly the 65% row.
+    const rows = tablePrices(u("100"), u("65"));
+    expect(new Set(rows).size).toBe(rows.length);
+    expect([...rows].sort((a, b) => (a < b ? -1 : 1))).toEqual(rows);
+    expect(rows).toContain(u("65"));
+    expect(rows).toContain(u("65") - 10_000n);
+  });
+
+  it("keeps the barrier and the cent below it when they are not round", () => {
+    const rows = tablePrices(u("250"), u("162.5"));
+    expect(rows).toContain(u("162.5"));
+    expect(rows).toContain(u("162.49"));
+    expect(new Set(rows).size).toBe(rows.length);
   });
 });
