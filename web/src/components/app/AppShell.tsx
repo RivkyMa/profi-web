@@ -8,23 +8,24 @@ import {
   Coins,
   FlaskConical,
   Layers,
-  RotateCcw,
   Shield,
 } from "lucide-react";
 import { Badge } from "@/components/ui";
+import { ProfiLogo } from "@/components/ui/ProfiLogo";
 import { cn } from "@/lib/cn";
 import { useAppStore } from "@/lib/store";
 import { ChainStatus } from "./chain/ChainStatus";
 import { ChainTestTools } from "./chain/ChainTestTools";
+import { DemoTools } from "./DemoTools";
 import { TxToaster } from "./TxToaster";
 import { WalletButton } from "./WalletButton";
 
 const NAV = [
+  { href: "/app/portfolio", label: "Portfolio", icon: Briefcase },
   { href: "/app/earn", label: "Earn", icon: Coins },
   { href: "/app/protect", label: "Protect", icon: Shield },
   { href: "/app/vaults", label: "Vaults", icon: Layers },
   { href: "/app/studio", label: "Studio", icon: FlaskConical },
-  { href: "/app/portfolio", label: "Portfolio", icon: Briefcase },
 ] as const;
 
 function NavLinks({ orientation }: { orientation: "vertical" | "horizontal" }) {
@@ -69,7 +70,6 @@ function NavLinks({ orientation }: { orientation: "vertical" | "horizontal" }) {
  * tabs on small screens), topbar with the mock wallet, and the tx toaster.
  */
 export function AppShell({ children }: { children: ReactNode }) {
-  const reset = useAppStore((s) => s.reset);
   const source = useAppStore((s) => s.source);
   const chainName = useAppStore((s) => s.chain?.name);
 
@@ -78,7 +78,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="border-b border-pulse-deep/40 bg-pulse-dim px-[var(--gutter)] py-2 text-center font-mono text-[11px] tracking-[0.06em] text-pulse-light">
         {source === "chain"
           ? `TESTNET / MOCK DATA. Mock tokens and a mock oracle on ${chainName}. No real funds, not audited, not live.`
-          : "TESTNET / MOCK DATA. No real funds, no contracts, not audited, not live."}
+          : "DEMO / MOCK DATA. USDG balances, token prices and transactions are simulated. No real funds."}
       </div>
 
       <div className="flex flex-1">
@@ -87,27 +87,14 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Link
               href="/"
               prefetch={false}
-              className="flex items-center gap-2.5 px-3 pt-2 font-display text-2xl leading-none"
+              className="self-start px-3 pt-2"
+              aria-label="PROFI landing page"
             >
-              <span
-                aria-hidden
-                className="size-2.5 rounded-full bg-pulse shadow-[0_0_14px_var(--color-pulse)]"
-              />
-              PROFI
+              <ProfiLogo />
             </Link>
             <NavLinks orientation="vertical" />
           </div>
           <div className="flex flex-col gap-3 px-1">
-            {source === "mock" && (
-              <button
-                type="button"
-                onClick={reset}
-                className="flex h-9 cursor-pointer items-center gap-2 rounded-lg px-2 text-xs text-ink-3 transition-colors hover:text-ink-1"
-              >
-                <RotateCcw className="size-3.5" aria-hidden />
-                Reset demo data
-              </button>
-            )}
             <Link
               href="/"
               prefetch={false}
@@ -124,15 +111,15 @@ export function AppShell({ children }: { children: ReactNode }) {
               <Link
                 href="/"
                 prefetch={false}
-                className="font-display text-xl leading-none lg:hidden"
+                className="shrink-0 lg:hidden"
                 aria-label="PROFI landing page"
               >
-                PROFI
+                <ProfiLogo className="w-20 min-[375px]:w-24 sm:w-28" />
               </Link>
               {/* Wrapper controls visibility: Badge's own inline-flex would win over "hidden". */}
               <div className="hidden sm:block">
                 <Badge tone="pulse" dot>
-                  Testnet / Mock data
+                  {source === "chain" ? "Testnet / Mock data" : "Demo / Mock data"}
                 </Badge>
               </div>
               <WalletButton />
@@ -150,10 +137,11 @@ export function AppShell({ children }: { children: ReactNode }) {
             <ChainStatus />
             <ChainTestTools />
             {children}
+            <DemoTools />
           </main>
 
           <footer className="border-t border-hair-2 px-[var(--gutter)] py-6 text-xs leading-relaxed text-ink-3">
-            Mock data on a testnet. Not an offer or solicitation to buy or sell
+            {source === "chain" ? "Testnet with mock tokens." : "Simulated data for preview only."} Not an offer or solicitation to buy or sell
             any security or financial product. You can lose some or all of the
             funds you commit. Nothing here is audited or live.
           </footer>

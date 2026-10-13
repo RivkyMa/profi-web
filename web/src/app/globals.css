@@ -12,10 +12,10 @@
   color-scheme: dark;
 
   /* Layout rhythm */
-  --max: 1200px;
+  --max: 1280px;
   --gutter: clamp(20px, 4vw, 40px);
   --grid-gap: clamp(16px, 2vw, 24px);
-  --section: clamp(96px, 11vw, 160px);
+  --section: clamp(48px, 6vw, 80px);
   --header-h: 64px;
 
   /* Motion */
@@ -151,6 +151,7 @@ html.lenis body {
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
@@ -195,36 +196,27 @@ html.lenis body {
   --series-protect: #a95cd6;
 }
 
-/* How it works: when the section is pinned (data-motion="on") only the active
-   step is expanded. Without motion every step is fully visible. */
-.step-desc {
-  display: grid;
-  grid-template-rows: 1fr;
+/* Product diagrams animate their own data, without extending page scroll. */
+@keyframes draw-price {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
 }
-
-[data-motion="on"] .step h3 {
-  transition: color var(--dur-state) var(--ease-premium);
+@keyframes transfer {
+  from { transform: translateX(-10px); opacity: 0.35; }
+  to { transform: translateX(0); opacity: 1; }
 }
-
-/* Inactive steps are muted by color (not opacity) so contrast stays >= 4.5:1. */
-[data-motion="on"] .step:not([data-active]) h3 {
-  color: var(--color-ink-3);
+.lifecycle-price-path {
+  stroke-dasharray: 1;
+  animation: draw-price 900ms ease-out both;
 }
-
-[data-motion="on"] .step:not([data-active]) .step-desc {
-  grid-template-rows: 0fr;
+.lifecycle-enter { animation: rise 400ms var(--ease-premium) both; }
+.lifecycle-transfer { animation: transfer 700ms ease-out 2 alternate; }
+@keyframes fund-escrow {
+  from { transform: translateY(-10px); opacity: 0.25; }
+  to { transform: translateY(6px); opacity: 1; }
 }
-
-[data-motion="on"] .step-desc {
-  transition: grid-template-rows var(--dur-state) var(--ease-premium);
-}
-
-[data-motion="on"] .step[data-active] .step-dot {
-  border-color: var(--color-pulse);
-  background: var(--color-pulse);
-  color: var(--color-ground-0);
-  box-shadow: 0 0 18px var(--color-pulse-glow);
-}
+.lifecycle-fund { animation: fund-escrow 900ms ease-out 2; }
+.lifecycle-lock { animation: rise 500ms var(--ease-premium) 700ms both; }
 
 /* Range input (payoff explorer slider) */
 .range {

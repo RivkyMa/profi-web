@@ -40,7 +40,7 @@ const RISKS = [
   },
   {
     title: "Funded does not mean safe.",
-    text: "Fully funded means obligations are held in escrow by contract. It does not make an outcome certain. The contracts are not deployed or audited, and this site shows mock data on a testnet.",
+    text: "Fully funded means obligations are held in escrow by contract. It does not make an outcome certain. The contracts are not audited, and this MVP uses simulated data.",
   },
 ] as const;
 

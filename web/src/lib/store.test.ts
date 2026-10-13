@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { DEFAULT_DRAFT } from "./mock/markets";
+import { DEFAULT_DRAFT, lotTerms, UNDERLYINGS } from "./mock/markets";
 import { summarize, viewPosition } from "./portfolio";
 import { configureMock, useAppStore } from "./store";
 import { parseUnits as u } from "./units";
@@ -47,6 +47,24 @@ describe("wallet and Earn deposits", () => {
 });
 
 describe("Protect deposits", () => {
+  it.each(UNDERLYINGS.slice(4).map((asset) => asset.symbol))(
+    "supports a complete deposit and downside claim for %s",
+    async (symbol) => {
+      s().connect();
+      const market = s().markets.find((m) => m.underlying === symbol)!;
+      const terms = lotTerms(market);
+      const tokensBefore = s().wallet.tokens[symbol];
+      const cashBefore = s().wallet.musd;
+      expect((await s().subscribe("protect", market.id, 1)).ok).toBe(true);
+      expect(s().wallet.tokens[symbol]).toBe(tokensBefore - terms.tokens);
+      expect(s().wallet.musd).toBe(cashBefore - terms.reserve);
+      expect((await s().fastForward(market.id, "below")).ok).toBe(true);
+      const position = s().protect.find((p) => p.marketId === market.id)!;
+      expect((await s().claim("protect", position.id)).ok).toBe(true);
+      expect(s().wallet.musd >= cashBefore - terms.reserve + terms.principal).toBe(true);
+    },
+  );
+
   it("takes the token and the premium reserve", async () => {
     s().connect();
     const { musd, tokens } = s().wallet;

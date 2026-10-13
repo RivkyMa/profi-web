@@ -122,13 +122,13 @@ Next.js 16 (App Router, Turbopack), React 19, TypeScript (strict), Tailwind CSS 
 
 | Area | Where | Notes |
 | --- | --- | --- |
-| Landing page | `web/src/app/(landing)` | Hero, core idea (pinned), how a market works (pinned, 5 stages), four products, payoff explorer, risks, launch gates, footer |
+| Landing page | `web/src/app/(landing)` | Hero, escrow funding diagram, interactive market lifecycle (5 stages), four products, payoff explorer, risks, launch gates, footer |
 | Dashboard | `web/src/app/app` | Earn, Protect, Vaults, Studio, Portfolio; simulated transactions (mock) or real ones (chain mode) |
 | Chain layer | `web/src/lib/chain`, `web/src/components/app/chain` | Env-only config, event reads, mapping, settlement math, transactions; wagmi + RainbowKit loaded only in chain mode |
 | Keeper | `keeper/` | Stateless viem process: activate, observe, unwind, collect fees, lock, settle |
 | Shared | `packages/shared` | Generated ABIs, enum constants, the lifecycle planner, test vectors |
 | Payoff model | `web/src/lib/payoff.ts` | Pure, integer-only; the source of truth for every number on screen |
-| 3D scene | `web/src/components/three` | One fixed canvas behind the landing; small lazy canvases for accents |
+| 3D scene | `web/src/components/three` | Contained hero sculpture; small lazy canvases for dashboard accents |
 | Design system | `web/src/components/ui` | Button, Card, Badge, Tabs, Tooltip, Section, form controls, payoff chart and outcome cards |
 | Mock data | `web/src/lib/mock` | Markets in every status, vault epochs, reference market |
 
@@ -179,13 +179,16 @@ Also covered: equality at the barrier and at the autocall level, a missed observ
 ## Landing page
 
 - Lenis smooth scroll is synchronized with ScrollTrigger through GSAP's ticker (one provider, full cleanup).
-- The main object (a coin monument) is driven by ScrollTrigger through a shared object (`web/src/lib/scene-state.ts`), read in `useFrame`. Scrolling never causes a React render.
-- Its position, scale and rotation are a pure function of scroll position (`ShieldChoreography`), plus per-section nudges from the two pinned timelines.
-- `prefers-reduced-motion`: no smooth scroll, no pinning, no scrubbed motion, the monument stays still, and all copy stays visible.
-- Weak devices (no WebGL, Save-Data, 2 GB or less memory, 2 cores or fewer) get a static monument (SVG) instead of a canvas. If a device cannot sustain about 18 fps for two consecutive 3-second windows, the scene gives up and the static monument takes over for the session.
+- The supplied abstract sculpture stays inside the hero's grid. No fixed background canvas, pinned sections or full-screen empty stages. Its restrained rotation runs in `useFrame`, and rendering pauses off-screen or when the tab is hidden.
+- Funding arrows converge on escrow; coupon charts show scenario prices; vault bars reveal the mock allocation weights. The lifecycle has an optional play/pause walkthrough that stops when off-screen. Manually selecting a stage or scenario stops playback.
+- `prefers-reduced-motion`: no smooth scroll, scrubbed movement or walkthrough playback. The sculpture stays still and all copy stays visible.
+- Weak devices (no WebGL, Save-Data, 2 GB or less memory, 2 cores or fewer) get a static visual instead of a canvas. If a device cannot sustain about 18 fps for two consecutive 3-second windows, the scene gives up and the static visual takes over for the session.
 - Text is never blocked by model loading; a missing GLB renders a procedural placeholder.
-- The Vaults section has its own model (an exchange building). It lives in the same fixed canvas and trades places with the monument as you scroll (the monument shrinks away, the building grows in place). Its GLB is only requested when that section is about two screens away.
-- Add `?3d=on` to the URL to force the 3D scene on a device that was downgraded to the static monument (weak-device heuristics or the FPS give-up).
+- The still fallback (`abstract-sculpture-poster.jpg`) is a render of the supplied model, so the asset remains consistent while loading and on devices without WebGL.
+- The landing Vaults section uses a compact allocation diagram. The existing exchange model is used only in the dashboard's Vaults header.
+- Payoff comparisons expand on demand below the main simulator; the loss explanation and risk section remain visible.
+- Add `?3d=on` to the URL to force the hero scene on a device downgraded by weak-device heuristics or the FPS guard.
+- `?3d=off` previews the static fallback. The hero also offers a pause/resume motion control.
 
 ## Contracts
 
@@ -200,7 +203,7 @@ Also covered: equality at the barrier and at the autocall level, a missed observ
 
 ## Mock dashboard
 
-By default everything under `/app` is mock data in memory. Reloading resets it ("Reset demo data" in the sidebar does too). In chain mode the same pages read and write the contracts: markets are discovered from the factory's `MarketCreated` events, the observation history from `Observed` events, and positions, pools and epochs from view calls. Amounts owed are computed from the market's pools with the escrow's own floor division, and a script in `keeper/` checks that against the contract's `claimable()`.
+By default everything under `/app` is mock data in memory. Reloading resets it ("Reset demo data" in the collapsed Demo tools panel does too). In chain mode the same pages read and write the contracts: markets are discovered from the factory's `MarketCreated` events, the observation history from `Observed` events, and positions, pools and epochs from view calls. Amounts owed are computed from the market's pools with the escrow's own floor division, and a script in `keeper/` checks that against the contract's `claimable()`.
 
 | Page | What you can do |
 | --- | --- |
@@ -210,9 +213,26 @@ By default everything under `/app` is mock data in memory. Reloading resets it (
 | `/app/studio` | Create a market from a bounded template; live validation; payoff preview with all outcomes |
 | `/app/portfolio` | Claimable versus locked collateral; normal settlement versus unwind; claim |
 
-**Demo path (about two minutes):** Connect Wallet (Mock), then Studio: Create market, Earn: deposit, Protect: deposit, use the *mock time machine* on that market to resolve it (try "Matures below barrier"), Portfolio: claim, then Vaults: deposit, advance the epoch twice, redeem. Tick "Fail next transaction" in the topbar to see an error state. In an empty portfolio, "Load demo portfolio" seeds positions in settled and unwound markets.
+**Demo path (about two minutes):** Connect Wallet (Mock), then Studio: Create market, Earn: deposit, Protect: deposit, use the *mock time machine* on that market to resolve it (try "Matures below barrier"), Portfolio: claim, then Vaults: deposit, advance the epoch twice, redeem. Open **Demo tools** below the page content and tick "Fail next transaction" to see an error state. In an empty portfolio, "Load demo portfolio" seeds positions in settled and unwound markets.
 
 Transactions are simulated: pending, then confirmed or reverted. The wallet is local state; no provider is ever contacted.
+
+## MVP review revisions
+
+The browser demo uses **USDG** as a display label with explicit mock-data notices.
+It does not represent a deployed USDG token. Chain mode keeps **mUSD**, the token
+symbol deployed by the existing local/testnet scripts.
+
+- Portfolio is first in the app navigation and shows wallet status and balances,
+  including before any positions exist.
+- Eight illustrative underlyings are available: TSLA, NVDA, AAPL, AMZN, GOOGL,
+  META, HOOD and MSFT. Reference prices are fixed mock values, not live quotes.
+- The landing page no longer pins the core idea or lifecycle sections. The
+  lifecycle lets visitors select a stage and compare coupon, maturity, autocall
+  and unwind scenarios using the same payoff calculation as the app.
+- Wallet connection and live price activation await a confirmed network,
+  deployment addresses and price source. Existing chain integration is retained.
+- New section navigation is deferred. The supplied abstract sculpture replaces the Bitcoin model.
 
 ## 3D assets
 
@@ -234,11 +254,10 @@ Until the file exists, the procedural placeholder named in the entry is rendered
 
 | Model | Raw | Optimized | Used for |
 | --- | --- | --- | --- |
-| `monument.glb` | 31 MB, 301k triangles, 4096 px textures | 1.3 MB, 84k triangles, 2048 px WebP, meshopt | Landing background scene (main object) |
-| `exchange.glb` | 32 MB, 396k triangles | 0.8 MB, 83k triangles, 1024 px | Landing Vaults section (background canvas) and Vaults page header |
-| `monument-mini.glb` | (from the monument) | 0.3 MB, 30k triangles, 512 px | Portfolio empty state |
+| `abstract-sculpture.glb` | 35 MiB, 543k triangles | 0.71 MiB, approximately 65k triangles, 1024 px WebP, meshopt | Hero and Portfolio empty state |
+| `exchange.glb` | 32 MB, 396k triangles | 0.8 MB, 83k triangles, 1024 px | Dashboard Vaults header |
 
-`npm run assets:optimize` rebuilds all three from `web/assets-src/`. Component names still say "shield" and "vault": those are the scene's main-object and second-object slots (see D-045).
+Run `npm run assets:optimize --workspace=web` to rebuild the sculpture from `web/assets-src/abstract_sculpt.glb`. The optimizer resolves the CLI from the workspace and uses a unique temporary directory per run. Original source files are never overwritten. Legacy monument files are unused.
 
 Meshopt is used instead of Draco so no decoder is downloaded at runtime. Lighting is procedural (`Lightformer`), so there is no HDR download either.
 
@@ -247,15 +266,15 @@ Meshopt is used instead of Draco so no decoder is downloaded at runtime. Lightin
 The full log, with reasoning, is in [`DECISIONS.md`](./DECISIONS.md). The ones that shape the code most:
 
 - **Integer money.** `bigint` with 6 decimals everywhere; comparisons against the barrier and autocall are exact (basis points), never rounded.
-- **One background canvas, driven outside React.** Scroll writes into a shared object; the scene reads it per frame.
-- **Main-object look as a pure function of scroll.** No overlapping tweens to fight over the same property.
-- **Content first.** SSR text, no hidden-by-default copy, 3D mounted after load and idle, static fallbacks.
+- **Contained 3D.** One hero canvas, with off-screen pausing and a static fallback.
+- **Motion explains the product.** Funding, observations and allocation animate in their own sections without extending the page scroll.
+- **Content first.** SSR text, a dynamically imported scene, static fallbacks and optional detailed comparisons.
 - **Mock, but honest.** Every outcome including losses is shown side by side; forbidden claim words are checked in the rendered text; launch gates are listed as requirements, never as progress.
 - **Cyan accent sampled from the model**, serif display for headlines, mono for figures.
 
 ## Performance and accessibility
 
-Lighthouse 13.5.0 against a production build on a development machine, Microsoft Edge headless with **software WebGL (SwiftShader, no GPU)**. Mobile uses Lighthouse's default simulated throttling (4x CPU, slow 4G); desktop uses the desktop preset. Scene work is CPU-bound in this setup, so treat the landing scores as a pessimistic floor, not a device measurement.
+Historical measurements below predate the abstract sculpture and compact landing revision; they are not current performance claims. Lighthouse 13.5.0 against a production build on a development machine, Microsoft Edge headless with **software WebGL (SwiftShader, no GPU)**. Mobile uses Lighthouse's default simulated throttling (4x CPU, slow 4G); desktop uses the desktop preset.
 
 | Page | Preset | Performance | Accessibility | Best practices | SEO | FCP | LCP | TBT | CLS |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |

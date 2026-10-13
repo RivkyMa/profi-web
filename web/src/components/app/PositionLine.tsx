@@ -1,8 +1,9 @@
 "use client";
 
+import { useQuoteSymbol } from "@/lib/use-quote-symbol";
+
 import { useState } from "react";
 import { Badge, Button, CLOSURE_LABEL, holding } from "@/components/ui";
-import { QUOTE } from "@/lib/mock/markets";
 import type { PositionView } from "@/lib/portfolio";
 import { useAppStore } from "@/lib/store";
 
@@ -23,6 +24,7 @@ const STATE_LABEL = {
  * settlement and unwind are labelled differently), and the claim action.
  */
 export function PositionLine({ view }: { view: PositionView }) {
+  const QUOTE = useQuoteSymbol();
   const claim = useAppStore((s) => s.claim);
   const source = useAppStore((s) => s.source);
   const adapter = useAppStore((s) => s.adapter);

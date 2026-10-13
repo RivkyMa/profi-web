@@ -95,7 +95,7 @@ function PlaceholderReady({
  * placeholder takes over. Text content is never blocked by this.
  */
 export function ShieldModel({
-  assetId = "monument",
+  assetId = "sculpture",
   onLoaded,
 }: {
   assetId?: AssetId;

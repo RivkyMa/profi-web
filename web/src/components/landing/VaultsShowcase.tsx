@@ -1,141 +1,55 @@
 "use client";
 
 import { Layers } from "lucide-react";
-import { Button, Container } from "@/components/ui";
+import { Badge, Button, Container } from "@/components/ui";
 import { QUOTE, seedMarkets } from "@/lib/mock/markets";
 import { seedEpochs } from "@/lib/mock/vaults";
 import { useScrollReveal } from "./useScrollReveal";
 
-// The allocation shown here is the mock epoch the dashboard uses.
 const EPOCH = seedEpochs()[0];
 const MARKETS = seedMarkets();
-
 const POINTS = [
-  {
-    title: "Shares per epoch",
-    text: `One share per ${QUOTE} deposited, tied to a single epoch. You can cancel until the deposit window closes.`,
-  },
-  {
-    title: "A cash buffer",
-    text: "Part of every epoch stays in stablecoin, so not everything is exposed to a market ending below its barrier.",
-  },
-  {
-    title: "Redeemed in kind",
-    text: "After the markets settle, any token a market ended in is shared pro rata. You can also redeem in cash at the last observed price.",
-  },
+  { title: "Shares per epoch", text: `One share per ${QUOTE} deposited. Cancel before the deposit window closes.` },
+  { title: "A cash buffer", text: "Part of the epoch remains in stablecoin. The rest carries the risk of its Earn markets." },
+  { title: "Redeemed after settlement", text: "Receive assets pro rata, or redeem in cash at the last observed price." },
 ] as const;
 
-/**
- * The vault gets its own section. The 3D model is not here: it lives in the
- * fixed background canvas (ShieldChoreography swaps it in with the shield) and
- * shows in the empty right column on wide screens, above the copy on phones.
- */
+/** The allocation is the visual: bars grow to the actual mock epoch weights. */
 export function VaultsShowcase() {
-  const rows = useScrollReveal<HTMLUListElement>({
-    selector: "[data-vault-row]",
-    y: 24,
-    stagger: 0.12,
-    start: "top 92%",
-    end: "bottom 70%",
-  });
-
+  const rows = useScrollReveal<HTMLDivElement>({ selector: ".vault-allocation", y: 0, scaleX: 0, stagger: 0.12 });
+  const allocations = [
+    ...EPOCH.allocations.map((a) => ({ name: MARKETS.find((m) => m.id === a.marketId)?.name ?? a.marketId, weight: a.weightBps, cash: false })),
+    { name: "Cash buffer", weight: EPOCH.cashBufferBps, cash: true },
+  ];
   return (
-    <section
-      id="vaults"
-      aria-labelledby="vaults-title"
-      className="relative flex min-h-[115dvh] items-end py-24 lg:min-h-dvh lg:items-center"
-    >
+    <section id="vaults" aria-labelledby="vaults-title" className="border-y border-hair-2 bg-ground-1 py-[var(--section)]">
       <Container>
-        <div className="grid gap-12 lg:grid-cols-[minmax(0,560px)_1fr]">
-          <div className="flex flex-col gap-8">
-            <header className="flex flex-col gap-4">
-              <p className="flex items-center gap-2 font-mono text-xs font-medium tracking-[0.14em] text-pulse uppercase">
-                <Layers className="size-4" aria-hidden />
-                Vaults
-              </p>
-              <h2
-                id="vaults-title"
-                className="font-display text-h2 leading-[1.1] tracking-[-0.02em]"
-              >
-                One deposit, several markets.
-              </h2>
-              <p className="text-lead text-ink-2">
-                A vault spreads stablecoin across approved Earn markets, per
-                epoch. You hold shares and withdraw once those markets settle.
-                It carries the downside of every market it holds.
-              </p>
-            </header>
-
-            <div className="rounded-xl border border-hair-2 bg-ground-1/85 p-5">
-              <div className="mb-3 flex items-baseline justify-between gap-4">
-                <h3 className="font-display text-h3 leading-tight">
-                  Epoch {EPOCH.id}
-                </h3>
-                <span className="font-mono text-[11px] tracking-[0.08em] text-ink-3 uppercase">
-                  Mock allocation
-                </span>
-              </div>
-              <ul ref={rows} className="flex flex-col gap-3">
-                {EPOCH.allocations.map((a) => {
-                  const m = MARKETS.find((x) => x.id === a.marketId);
-                  return (
-                    <li key={a.marketId} data-vault-row>
-                      <div className="mb-1 flex justify-between gap-4 text-sm">
-                        <span>{m?.name ?? a.marketId}</span>
-                        <span className="font-mono tabular-nums">
-                          {a.weightBps / 100}%
-                        </span>
-                      </div>
-                      <div
-                        aria-hidden
-                        className="h-1.5 overflow-hidden rounded-full bg-hair-2"
-                      >
-                        <div
-                          className="h-full rounded-full bg-pulse"
-                          style={{ width: `${a.weightBps / 100}%` }}
-                        />
-                      </div>
-                    </li>
-                  );
-                })}
-                <li data-vault-row>
-                  <div className="mb-1 flex justify-between gap-4 text-sm">
-                    <span>Cash buffer</span>
-                    <span className="font-mono tabular-nums">
-                      {EPOCH.cashBufferBps / 100}%
-                    </span>
-                  </div>
-                  <div
-                    aria-hidden
-                    className="h-1.5 overflow-hidden rounded-full bg-hair-2"
-                  >
-                    <div
-                      className="h-full rounded-full bg-steel"
-                      style={{ width: `${EPOCH.cashBufferBps / 100}%` }}
-                    />
-                  </div>
-                </li>
-              </ul>
-            </div>
-
-            <dl className="grid gap-4 sm:grid-cols-3">
-              {POINTS.map((p) => (
-                <div key={p.title}>
-                  <dt className="font-medium">{p.title}</dt>
-                  <dd className="mt-1 text-sm text-ink-2">{p.text}</dd>
-                </div>
-              ))}
-            </dl>
-
-            <div>
-              <Button href="/app/vaults" variant="secondary">
-                Open Vaults (Mock)
-              </Button>
-            </div>
+        <div className="grid items-center gap-8 lg:grid-cols-[1fr_1fr] lg:gap-16">
+          <div className="flex flex-col items-start gap-5">
+            <p className="flex items-center gap-2 font-mono text-xs tracking-[0.14em] text-pulse uppercase"><Layers className="size-4" aria-hidden />Vaults</p>
+            <h2 id="vaults-title" className="font-display text-h2 leading-[1.1] tracking-[-0.03em]">One deposit.<br />Several markets.</h2>
+            <p className="max-w-lg text-lead text-ink-2">A vault allocates stablecoin across approved Earn markets in one epoch. Hold shares and redeem after the markets settle.</p>
+            <p className="max-w-lg text-sm text-ink-3">Diversification does not remove downside. You carry the risk of every market the vault holds.</p>
+            <Button href="/app/vaults" variant="secondary">Explore Vaults (Mock)</Button>
           </div>
-          {/* Right column is intentionally empty: the vault lives there. */}
-          <div aria-hidden className="hidden lg:block" />
+          <div ref={rows} className="rounded-xl border border-hair-3 bg-ground-0 p-5 sm:p-7">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-hair-2 pb-5">
+              <div><p className="font-mono text-[10px] tracking-widest text-ink-3 uppercase">Allocation overview</p><h3 className="mt-2 font-display text-h3">Epoch {EPOCH.id}</h3></div>
+              <Badge tone="pulse">Mock data</Badge>
+            </div>
+            <p className="my-5 text-sm text-ink-2">One deposit distributed across the epoch.</p>
+            <ul className="flex flex-col gap-5">
+              {allocations.map((a) => <li key={a.name}>
+                <div className="mb-2 flex justify-between gap-4 text-sm"><span>{a.name}</span><span className="font-mono tabular-nums">{a.weight / 100}%</span></div>
+                <div aria-hidden className="h-2 overflow-hidden rounded-sm bg-hair-2"><div className={`vault-allocation h-full origin-left ${a.cash ? "bg-steel" : "bg-pulse"}`} style={{ width: `${a.weight / 100}%` }} /></div>
+              </li>)}
+            </ul>
+            <p className="mt-6 border-t border-hair-2 pt-4 text-xs text-ink-3">Illustrative allocation · withdrawals after settlement</p>
+          </div>
         </div>
+        <dl className="mt-8 grid gap-5 border-t border-hair-2 pt-6 sm:grid-cols-3 sm:gap-8">
+          {POINTS.map((p) => <div key={p.title}><dt className="text-sm font-medium">{p.title}</dt><dd className="mt-2 text-sm text-ink-2">{p.text}</dd></div>)}
+        </dl>
       </Container>
     </section>
   );

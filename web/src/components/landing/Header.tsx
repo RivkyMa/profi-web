@@ -3,6 +3,7 @@
 import type { MouseEvent } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui";
+import { ProfiLogo } from "@/components/ui/ProfiLogo";
 import { scrollToTarget } from "@/lib/scroll";
 
 const LINKS = [
@@ -24,14 +25,10 @@ export function Header() {
       <div className="mx-auto flex h-[var(--header-h)] w-full max-w-[var(--max)] items-center justify-between px-[var(--gutter)]">
         <Link
           href="/"
-          className="flex items-center gap-2.5 font-display text-2xl leading-none tracking-[-0.01em]"
+          className="shrink-0"
           aria-label="PROFI home"
         >
-          <span
-            aria-hidden
-            className="size-2.5 rounded-full bg-pulse shadow-[0_0_14px_var(--color-pulse)]"
-          />
-          PROFI
+          <ProfiLogo className="w-24 min-[375px]:w-28 sm:w-32" />
         </Link>
 
         <nav aria-label="Primary" className="hidden items-center gap-8 md:flex">

@@ -24,10 +24,10 @@ function Turntable({ children }: { children: ReactNode }) {
   useFrame((state, delta) => {
     const g = group.current;
     if (!g) return;
-    g.rotation.y = Math.sin(state.clock.elapsedTime * 0.5) * 0.6;
+    g.rotation.y = -0.12 + Math.sin(state.clock.elapsedTime * 0.24) * 0.12;
     g.rotation.x = THREE.MathUtils.damp(
       g.rotation.x,
-      -state.pointer.y * 0.25,
+      -state.pointer.y * 0.05,
       4,
       delta,
     );

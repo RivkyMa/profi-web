@@ -1,15 +1,9 @@
 "use client";
 
-import { useRef, type CSSProperties } from "react";
 import { ArrowUpRight, Coins, Layers, Shield, SlidersHorizontal } from "lucide-react";
-import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { useGSAP } from "@gsap/react";
 import Link from "next/link";
 import { Section } from "@/components/ui";
-
-gsap.registerPlugin(useGSAP, ScrollTrigger);
-
+import { useScrollReveal } from "./useScrollReveal";
 const PRODUCTS = [
   {
     name: "Earn",
@@ -53,152 +47,25 @@ const PRODUCTS = [
   },
 ] as const;
 
-function IconArt({ Icon }: { Icon: typeof Coins }) {
-  return (
-    <div className="absolute inset-0 flex items-center justify-center text-pulse">
-      <Icon className="size-14 stroke-[1.25]" aria-hidden />
-    </div>
-  );
-}
-
-/**
- * Four product cards. Entrance is scrubbed (cards rise at different rates)
- * and each card tilts toward the pointer on fine-pointer devices.
- */
+/** Compact product comparison with a direct route into each demo. */
 export function ProductsSection() {
-  const root = useRef<HTMLElement>(null);
-
-  useGSAP(
-    () => {
-      const mm = gsap.matchMedia();
-      mm.add("(prefers-reduced-motion: no-preference)", () => {
-        const cards = gsap.utils.toArray<HTMLElement>("[data-product]", root.current);
-
-        cards.forEach((card, i) => {
-          gsap.from(card, {
-            y: 90 + (i % 2) * 70,
-            autoAlpha: 0,
-            rotateX: 8,
-            transformPerspective: 900,
-            ease: "none",
-            scrollTrigger: {
-              trigger: card,
-              start: "top 100%",
-              end: "top 62%",
-              scrub: 0.6,
-            },
-          });
-        });
-      });
-
-      // Pointer tilt only where hover exists, and never under reduced motion.
-      mm.add(
-        "(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)",
-        () => {
-          const cleanups: Array<() => void> = [];
-          const cards = gsap.utils.toArray<HTMLElement>("[data-tilt]", root.current);
-
-          for (const card of cards) {
-            const rotX = gsap.quickTo(card, "rotationX", { duration: 0.5, ease: "power3.out" });
-            const rotY = gsap.quickTo(card, "rotationY", { duration: 0.5, ease: "power3.out" });
-            gsap.set(card, { transformPerspective: 900 });
-
-            const onMove = (event: PointerEvent) => {
-              const r = card.getBoundingClientRect();
-              const px = (event.clientX - r.left) / r.width;
-              const py = (event.clientY - r.top) / r.height;
-              rotY((px - 0.5) * 10);
-              rotX(-(py - 0.5) * 8);
-              card.style.setProperty("--mx", `${px * 100}%`);
-              card.style.setProperty("--my", `${py * 100}%`);
-            };
-            const onLeave = () => {
-              rotX(0);
-              rotY(0);
-            };
-            card.addEventListener("pointermove", onMove);
-            card.addEventListener("pointerleave", onLeave);
-            cleanups.push(() => {
-              card.removeEventListener("pointermove", onMove);
-              card.removeEventListener("pointerleave", onLeave);
-            });
-          }
-          return () => cleanups.forEach((fn) => fn());
-        },
-      );
-      return () => mm.revert();
-    },
-    { scope: root },
-  );
-
+  const root = useScrollReveal<HTMLUListElement>({ selector: "[data-product]", y: 16, stagger: 0.08 });
   return (
-    <Section
-      id="products"
-      ref={root}
-      eyebrow="Products"
-      title="Four products, one market model."
-      description="Each product is a different way into the same fully funded market. Every card links to its mock page in the app."
-    >
-      <ul className="grid gap-5 md:grid-cols-2">
+    <Section id="products" eyebrow="Products" title="Four ways to use PROFI."
+      description="Choose the role that fits your assets. Each product uses the same fully funded market model.">
+      <ul ref={root} className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {PRODUCTS.map((p) => {
           const Icon = p.icon;
           return (
             <li key={p.name} data-product>
-              <Link
-                href={p.href}
-                data-tilt
-                style={{ "--mx": "50%", "--my": "0%" } as CSSProperties}
-                className="group relative flex h-full flex-col gap-5 overflow-hidden rounded-xl border border-hair-2 bg-ground-2/90 p-7 shadow-depth transition-colors duration-300 ease-premium hover:border-pulse-deep"
-              >
-                <span
-                  aria-hidden
-                  className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100"
-                  style={{
-                    background:
-                      "radial-gradient(360px circle at var(--mx) var(--my), rgb(53 216 207 / 0.12), transparent 70%)",
-                  }}
-                />
-                <div className="relative">
-                  <div className="relative h-40 overflow-hidden rounded-lg border border-hair-1 bg-ground-1">
-                    <div
-                      aria-hidden
-                      className="absolute inset-0"
-                      style={{
-                        background:
-                          "radial-gradient(60% 80% at 50% 100%, rgb(53 216 207 / 0.10), transparent 70%)",
-                      }}
-                    />
-                    <IconArt Icon={Icon} />
-                  </div>
-                  <ArrowUpRight
-                    aria-hidden
-                    className="absolute top-3 right-3 size-5 text-ink-3 transition-[color,transform] duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-pulse"
-                  />
-                </div>
-                <div className="relative">
-                  <h3 className="font-display text-h3">{p.name}</h3>
-                  <p className="mt-2 text-ink-2">{p.summary}</p>
-                </div>
-                <dl className="relative mt-auto grid gap-3 border-t border-hair-2 pt-5 text-sm">
-                  <div>
-                    <dt className="font-mono text-[11px] tracking-[0.08em] text-ink-3 uppercase">
-                      You provide
-                    </dt>
-                    <dd className="mt-1">{p.provide}</dd>
-                  </div>
-                  <div>
-                    <dt className="font-mono text-[11px] tracking-[0.08em] text-ink-3 uppercase">
-                      You receive
-                    </dt>
-                    <dd className="mt-1">{p.receive}</dd>
-                  </div>
-                  <div>
-                    <dt className="font-mono text-[11px] tracking-[0.08em] text-ink-3 uppercase">
-                      Main risk
-                    </dt>
-                    <dd className="mt-1 text-ink-2">{p.risk}</dd>
-                  </div>
+              <Link href={p.href} className="group flex h-full flex-col gap-5 rounded-xl border border-hair-2 bg-ground-1 p-5 transition-colors hover:border-hair-4 hover:bg-ground-2">
+                <div className="flex items-center gap-3"><Icon aria-hidden className="size-5 text-pulse" /><h3 className="font-display text-h3">{p.name}</h3><ArrowUpRight aria-hidden className="ml-auto size-4 text-ink-3 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" /></div>
+                <p className="text-sm leading-relaxed text-ink-2">{p.summary}</p>
+                <dl className="mt-auto flex flex-col gap-4 border-t border-hair-2 pt-4 text-sm">
+                  <div><dt className="font-mono text-[10px] tracking-wider text-ink-3 uppercase">You provide</dt><dd className="mt-1">{p.provide}</dd></div>
+                  <div><dt className="font-mono text-[10px] tracking-wider text-ink-3 uppercase">You receive</dt><dd className="mt-1 text-ink-2">{p.receive}</dd></div>
                 </dl>
+                <p className="border-t border-hair-2 pt-4 text-xs leading-relaxed text-ink-3"><span className="text-ink-2">Main risk. </span>{p.risk}</p>
               </Link>
             </li>
           );

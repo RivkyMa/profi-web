@@ -25,10 +25,10 @@ export interface ModelAsset {
 }
 
 export const assets = {
-  // The landing page's main object (the "shield" slot of the scene).
-  monument: {
-    url: `${basePath}/models/monument.glb`,
-    height: 2.5,
+  // User-supplied abstract sculpture, optimized for both hero and small slots.
+  sculpture: {
+    url: `${basePath}/models/abstract-sculpture.glb`,
+    height: 3.1,
     preload: true,
     placeholder: "generic",
   },
@@ -40,17 +40,6 @@ export const assets = {
     preload: false,
     placeholder: "generic",
   },
-  // Light variant (512 px textures, ~30k triangles) for small UI accents. The
-  // full monument's 2048 px textures cost ~90 MB of VRAM, too much for a
-  // header-sized canvas.
-  monumentMini: {
-    url: `${basePath}/models/monument-mini.glb`,
-    height: 2.5,
-    preload: false,
-    placeholder: "generic",
-  },
-  // TODO(assets): register new models here (coin, ...). Until their GLB
-  // exists they render as the "generic" placeholder.
 } as const satisfies Record<string, ModelAsset>;
 
 export type AssetId = keyof typeof assets;

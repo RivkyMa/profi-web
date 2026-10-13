@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui";
+import { ProfiLogo } from "@/components/ui/ProfiLogo";
 
 const APP_LINKS = [
+  { href: "/app/portfolio", label: "Portfolio" },
   { href: "/app/earn", label: "Earn" },
   { href: "/app/protect", label: "Protect" },
   { href: "/app/vaults", label: "Vaults" },
   { href: "/app/studio", label: "Studio" },
-  { href: "/app/portfolio", label: "Portfolio" },
 ] as const;
 
 const PAGE_LINKS = [
@@ -22,13 +23,15 @@ export function Footer() {
       <div className="mx-auto flex max-w-[var(--max)] flex-col gap-12">
         <div className="grid gap-10 md:grid-cols-[1.4fr_1fr_1fr]">
           <div className="flex flex-col gap-4">
-            <p className="font-display text-3xl leading-none">PROFI</p>
+            <Link href="/" aria-label="PROFI home" className="self-start">
+              <ProfiLogo className="w-40" />
+            </Link>
             <p className="max-w-sm text-sm text-ink-2">
               Conditional protection and conditional premium on Robinhood Chain,
               funded in full by each market&apos;s escrow.
             </p>
             <Badge tone="pulse" dot className="self-start">
-              Testnet / Mock data
+              Demo / Mock data
             </Badge>
           </div>
 
@@ -71,7 +74,7 @@ export function Footer() {
 
         <div className="border-t border-hair-2 pt-8 text-xs leading-relaxed text-ink-3">
           <p className="max-w-4xl">
-            This site is a demonstration running on mock data on a testnet. It
+            This site is a demonstration using simulated data. It
             is not an offer or solicitation to buy or sell any security or
             financial product. You can lose some or all of the funds you
             commit. The contracts shown are not audited and nothing here is

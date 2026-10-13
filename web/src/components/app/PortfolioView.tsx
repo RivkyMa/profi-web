@@ -1,11 +1,12 @@
 "use client";
 
+import { useQuoteSymbol } from "@/lib/use-quote-symbol";
+
 import { useMemo } from "react";
 import { Badge, Button, Card } from "@/components/ui";
 import { ModelMedia } from "@/components/three/ModelMedia";
 import { ShieldFallback } from "@/components/three/ShieldFallback";
 import { formatAmount, formatTokens } from "@/lib/format";
-import { QUOTE } from "@/lib/mock/markets";
 import { epochOutcome } from "@/lib/mock/vaults";
 import {
   summarize,
@@ -18,6 +19,7 @@ import { PositionLine } from "./PositionLine";
 import { Notice } from "./primitives";
 
 function TotalsList({ totals, empty }: { totals: Totals; empty: string }) {
+  const QUOTE = useQuoteSymbol();
   const tokens = Object.entries(totals.tokens);
   if (totals.cash === 0n && tokens.length === 0) {
     return <p className="text-sm text-ink-3">{empty}</p>;
@@ -39,12 +41,12 @@ function TotalsList({ totals, empty }: { totals: Totals; empty: string }) {
 }
 
 export function PortfolioView() {
+  const QUOTE = useQuoteSymbol();
   const markets = useAppStore((s) => s.markets);
   const earn = useAppStore((s) => s.earn);
   const protect = useAppStore((s) => s.protect);
   const epochs = useAppStore((s) => s.epochs);
   const deposits = useAppStore((s) => s.deposits);
-  const wallet = useAppStore((s) => s.wallet);
   const seedDemo = useAppStore((s) => s.seedDemo);
   const source = useAppStore((s) => s.source);
 
@@ -93,7 +95,7 @@ export function PortfolioView() {
     return (
       <Card padding="lg" className="flex flex-col items-center gap-6 py-14 text-center">
         <ModelMedia
-          assetId="monumentMini"
+          assetId="sculpture"
           className="h-40 w-40"
           fallback={
             <div className="flex h-full items-center justify-center">
@@ -149,18 +151,6 @@ export function PortfolioView() {
           <TotalsList totals={locked} empty="No collateral is locked." />
         </Card>
       </div>
-
-      {wallet.connected && (
-        <p className="font-mono text-xs text-ink-3">
-          Wallet: {formatAmount(wallet.musd)} {QUOTE}
-          {Object.entries(wallet.tokens).map(([sym, amt]) => (
-            <span key={sym}>
-              {" / "}
-              {formatTokens(amt)} {sym}
-            </span>
-          ))}
-        </p>
-      )}
 
       {claimableViews.length > 0 && (
         <section aria-label="Claimable positions" className="flex flex-col gap-3">

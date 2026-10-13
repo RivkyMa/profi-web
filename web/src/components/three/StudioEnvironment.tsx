@@ -19,22 +19,21 @@ export function StudioEnvironment() {
       />
       <Lightformer
         form="rect"
-        intensity={3}
-        color="#35d8cf"
+        intensity={1.2}
+        color="#a9d8f0"
         position={[5, 0.5, 2]}
         scale={[2.5, 6, 1]}
         target={[0, 0, 0]}
       />
       <Lightformer
-        form="ring"
-        intensity={2.5}
-        color="#c42bbd"
+        form="rect"
+        intensity={0.6}
+        color="#aa9ac4"
         position={[0, -3.5, 3]}
         scale={5}
         target={[0, 0, 0]}
       />
-      {/* Soft front fill: the monument's coin face is a near mirror that
-          looks straight back at the camera, so it needs something to reflect. */}
+      {/* Broad neutral fill keeps the brushed metal readable. */}
       <Lightformer
         form="rect"
         intensity={0.9}

@@ -1,5 +1,7 @@
 "use client";
 
+import { useQuoteSymbol } from "@/lib/use-quote-symbol";
+
 import { useState } from "react";
 import { Phase, planMarket, type MarketAction } from "@profi/shared";
 import { Button } from "@/components/ui";
@@ -8,7 +10,6 @@ import type { MarketOp } from "@/lib/chain/adapter-types";
 import { formatDateTime } from "@/lib/dates";
 import { formatAmount } from "@/lib/format";
 import type { MockMarket } from "@/lib/mock/markets";
-import { QUOTE } from "@/lib/mock/markets";
 import { useAppStore } from "@/lib/store";
 
 const BUTTON: Record<MarketAction["kind"], string> = {
@@ -57,6 +58,7 @@ function describe(market: MockMarket, step: MarketAction | null): string {
  * re-checks every condition, so a stale button can only fail, never misfire.
  */
 export function ChainMarketActions({ market }: { market: MockMarket }) {
+  const QUOTE = useQuoteSymbol();
   const marketAction = useAppStore((s) => s.marketAction);
   const wallet = useAppStore((s) => s.wallet);
   const [busy, setBusy] = useState(false);

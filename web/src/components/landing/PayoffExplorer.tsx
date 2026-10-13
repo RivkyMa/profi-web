@@ -47,7 +47,9 @@ export function PayoffExplorer() {
               {100 - BARRIER}%.
             </p>
           </div>
-          <div className="grid gap-5 md:grid-cols-2">
+          <details className="rounded-xl border border-hair-2 bg-ground-1 p-5">
+            <summary className="cursor-pointer text-sm font-medium text-pulse">Compare the amounts at 65.00 and 64.99</summary>
+          <div className="mt-5 grid gap-5 md:grid-cols-2">
             <OutcomeCard
               title={`Final price ${BARRIER.toFixed(2)}`}
               closure={aboveResult.closure}
@@ -67,6 +69,7 @@ export function PayoffExplorer() {
               highlight
             />
           </div>
+          </details>
         </div>
 
         <div className="flex flex-col gap-5">
@@ -77,7 +80,9 @@ export function PayoffExplorer() {
               Token amounts are valued at the last observed price.
             </p>
           </div>
-          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+          <details className="rounded-xl border border-hair-2 bg-ground-1 p-5">
+            <summary className="cursor-pointer text-sm font-medium text-pulse">Compare all four settlement outcomes</summary>
+          <div className="mt-5 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
             {terminalScenarios.map((s) => {
               const result = simulate(
                 referenceMarket,
@@ -99,6 +104,7 @@ export function PayoffExplorer() {
               );
             })}
           </div>
+          </details>
         </div>
 
         <p className="max-w-3xl text-sm text-ink-3">

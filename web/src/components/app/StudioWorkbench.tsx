@@ -1,11 +1,12 @@
 "use client";
 
+import { useQuoteSymbol } from "@/lib/use-quote-symbol";
+
 import { useState } from "react";
 import { Button, Card, Checkbox, NumberField, SelectField } from "@/components/ui";
 import { formatAmount } from "@/lib/format";
 import {
   DEFAULT_DRAFT,
-  QUOTE,
   TEMPLATE,
   UNDERLYINGS,
   draftToParams,
@@ -62,6 +63,7 @@ const toDraft = (f: FormState): MarketDraft => ({
  * created.
  */
 export function StudioWorkbench() {
+  const QUOTE = useQuoteSymbol();
   const wallet = useAppStore((s) => s.wallet);
   const connect = useAppStore((s) => s.connect);
   const createMarket = useAppStore((s) => s.createMarket);

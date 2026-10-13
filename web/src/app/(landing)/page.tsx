@@ -13,8 +13,7 @@ import { VaultsShowcase } from "@/components/landing/VaultsShowcase";
 export const metadata: Metadata = { alternates: { canonical: "/" } };
 
 /**
- * Landing page. Section ids (hero, idea, how, products, payoff, risks, gates,
- * cta, plus vaults) are the stops used by ShieldChoreography; keep them in sync.
+ * Product explanation in normal document flow, without pinned scroll scenes.
  */
 export default function Home() {
   return (

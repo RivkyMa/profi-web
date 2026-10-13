@@ -15,6 +15,7 @@ import { chainSetup } from "./chain/config";
 import type { ChainModel } from "./chain/mapping";
 import { addDays, DEMO_TODAY } from "./dates";
 import {
+  UNDERLYINGS,
   draftToParams,
   lotTerms,
   seedMarkets,
@@ -91,7 +92,7 @@ const initialWallet = (): Wallet => ({
   connected: false,
   address: MOCK_ADDRESS,
   musd: u("100000"),
-  tokens: { TSLA: u("500"), NVDA: u("800"), AAPL: u("600"), AMZN: u("400") },
+  tokens: { ...Object.fromEntries(UNDERLYINGS.map((asset) => [asset.symbol, u("500")])), TSLA: u("500"), NVDA: u("800"), AAPL: u("600"), AMZN: u("400") },
 });
 
 /** How long a simulated transaction stays pending. Tests set it to 0. */
@@ -361,12 +362,12 @@ export const useAppStore = create<AppStore>()((set, get) => {
           const t = lotTerms(m);
           const n = BigInt(lots);
           if (side === "earn") {
-            if (s.wallet.musd < t.principal * n) return "Insufficient mUSD balance.";
+            if (s.wallet.musd < t.principal * n) return "Insufficient USDG balance.";
           } else {
             if ((s.wallet.tokens[m.underlying] ?? 0n) < t.tokens * n) {
               return `Insufficient ${m.underlying} balance.`;
             }
-            if (s.wallet.musd < t.reserve * n) return "Insufficient mUSD for the premium reserve.";
+            if (s.wallet.musd < t.reserve * n) return "Insufficient USDG for the premium reserve.";
           }
           return null;
         },
@@ -509,7 +510,7 @@ export const useAppStore = create<AppStore>()((set, get) => {
           if (!e) return "Epoch not found.";
           if (e.phase !== "open") return "The deposit window is closed.";
           if (amount <= 0n) return "Enter an amount above 0.";
-          if (amount > s.wallet.musd) return "Insufficient mUSD balance.";
+          if (amount > s.wallet.musd) return "Insufficient USDG balance.";
           const mine = s.deposits
             .filter((d) => d.epochId === epochId && d.status === "confirmed")
             .reduce((sum, d) => sum + d.amount, 0n);

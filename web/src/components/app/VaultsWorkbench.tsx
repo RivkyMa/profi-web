@@ -1,10 +1,12 @@
 "use client";
 
+import { useQuoteSymbol } from "@/lib/use-quote-symbol";
+
 import { useState } from "react";
 import { Badge, Button, Card, NumberField } from "@/components/ui";
 import { formatDate } from "@/lib/dates";
 import { formatAmount, formatTokens } from "@/lib/format";
-import { QUOTE, STATUS_LABEL, type MockMarket } from "@/lib/mock/markets";
+import { STATUS_LABEL, type MockMarket } from "@/lib/mock/markets";
 import {
   epochOutcome,
   type EpochPhase,
@@ -76,6 +78,7 @@ function DepositRow({
   deposit: VaultDeposit;
   epoch: VaultEpoch;
 }) {
+  const QUOTE = useQuoteSymbol();
   const markets = useAppStore((s) => s.markets);
   const cancel = useAppStore((s) => s.vaultCancel);
   const redeem = useAppStore((s) => s.vaultRedeem);
@@ -189,6 +192,7 @@ function DepositRow({
 }
 
 function EpochCard({ epoch }: { epoch: VaultEpoch }) {
+  const QUOTE = useQuoteSymbol();
   const wallet = useAppStore((s) => s.wallet);
   const connect = useAppStore((s) => s.connect);
   const markets = useAppStore((s) => s.markets);
@@ -240,7 +244,7 @@ function EpochCard({ epoch }: { epoch: VaultEpoch }) {
         <Stat label="Cap" value={formatAmount(epoch.cap, { cents: false })} hint={QUOTE} />
         <Stat label="Deposited" value={formatAmount(total, { cents: false })} hint={`${fillPct}% of cap`} />
         <Stat label="Cash buffer" value={`${epoch.cashBufferBps / 100}%`} hint="Held back as stablecoin" />
-        <Stat label="Your shares" value={formatAmount(myActive)} hint="1 share per mUSD deposited" />
+        <Stat label="Your shares" value={formatAmount(myActive)} hint={`1 share per ${QUOTE} deposited`} />
       </dl>
 
       <Allocation epoch={epoch} markets={markets} />

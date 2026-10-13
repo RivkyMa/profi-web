@@ -14,10 +14,9 @@
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
-    "assets:optimize": "npm run assets:optimize:monument && npm run assets:optimize:exchange && npm run assets:optimize:monument-mini",
-    "assets:optimize:monument": "node scripts/optimize-model.mjs assets-src/bitcoin_monument_.glb public/models/monument.glb --ratio 0.28 --texture 2048",
-    "assets:optimize:exchange": "node scripts/optimize-model.mjs assets-src/exchange_building.glb public/models/exchange.glb --ratio 0.21 --texture 1024",
-    "assets:optimize:monument-mini": "node scripts/optimize-model.mjs assets-src/bitcoin_monument_.glb public/models/monument-mini.glb --ratio 0.10 --texture 512"
+    "assets:optimize": "npm run assets:optimize:sculpture",
+    "assets:optimize:sculpture": "node scripts/optimize-model.mjs assets-src/abstract_sculpt.glb public/models/abstract-sculpture.glb --ratio 0.12 --texture 1024",
+    "assets:optimize:exchange": "node scripts/optimize-model.mjs assets-src/exchange_building.glb public/models/exchange.glb --ratio 0.21 --texture 1024"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",

@@ -7,7 +7,7 @@ import { Component, type ReactNode } from "react";
  * page down: the static shield fallback behind the canvas simply stays.
  */
 export class SceneBoundary extends Component<
-  { children: ReactNode },
+  { children: ReactNode; onFailure?: () => void },
   { failed: boolean }
 > {
   state = { failed: false };
@@ -18,6 +18,7 @@ export class SceneBoundary extends Component<
 
   componentDidCatch(error: Error) {
     console.warn("[3D] Scene unavailable, using the static shield.", error);
+    this.props.onFailure?.();
   }
 
   render() {

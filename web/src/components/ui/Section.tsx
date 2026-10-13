@@ -64,7 +64,7 @@ export function Section({
         {hasHeader && (
           <header
             className={cn(
-              "mb-12 flex max-w-3xl flex-col gap-4",
+              "mb-8 flex max-w-3xl flex-col gap-4",
               align === "center" && "mx-auto items-center text-center",
             )}
           >

@@ -10,12 +10,13 @@ import { deriveTerms, validateParams, type PayoffParams } from "../payoff";
 import type { ScenarioId } from "../scenarios";
 import { parseUnits as u } from "../units";
 
-export const QUOTE = "mUSD";
+/** Display currency for the browser demo; this is not a deployed USDG token. */
+export const QUOTE = "USDG";
 
 export interface Underlying {
   symbol: string;
   name: string;
-  /** Mock reference price in mUSD, used as a new market's strike. */
+  /** Illustrative USDG reference price, never a live market quote. */
   refPrice: string;
 }
 
@@ -24,6 +25,10 @@ export const UNDERLYINGS: readonly Underlying[] = [
   { symbol: "NVDA", name: "Tokenized NVDA (mock)", refPrice: "120" },
   { symbol: "AAPL", name: "Tokenized AAPL (mock)", refPrice: "210" },
   { symbol: "AMZN", name: "Tokenized AMZN (mock)", refPrice: "185" },
+  { symbol: "GOOGL", name: "Alphabet / Google (mock)", refPrice: "175" },
+  { symbol: "META", name: "Meta Platforms (mock)", refPrice: "500" },
+  { symbol: "HOOD", name: "Robinhood (mock)", refPrice: "25" },
+  { symbol: "MSFT", name: "Microsoft (mock)", refPrice: "420" },
 ];
 
 /**
@@ -156,6 +161,15 @@ export function seedMarkets(): MockMarket[] {
       observations: 4, coupon: "24", cap: 90, filledEarn: 90, filledProtect: 90,
       lockedFrom: t(-50), status: "unwound", resolution: "unwind",
     }),
+    ...UNDERLYINGS.slice(4).map((asset, i) => market(
+      `${asset.symbol.toLowerCase()}-4w-demo`, `${asset.symbol} 4W`, asset.symbol,
+      {
+        tokens: "10", strike: asset.refPrice, barrierBps: 6500, autocallBps: 10_000,
+        observations: 4, coupon: String(Number(asset.refPrice) * 0.08),
+        cap: 100, filledEarn: 20 + i * 5, filledProtect: 15 + i * 5,
+        lockedFrom: t(7 + i), status: "subscribing",
+      },
+    )),
   ];
 }
 

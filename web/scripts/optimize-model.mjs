@@ -12,7 +12,8 @@
  * committed under public/models/.
  */
 import { execFileSync } from "node:child_process";
-import { copyFileSync, mkdirSync, rmSync, statSync } from "node:fs";
+import { copyFileSync, mkdirSync, mkdtempSync, rmSync, statSync } from "node:fs";
+import { createRequire } from "node:module";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -33,10 +34,11 @@ const ratio = flag("ratio", "0.08");
 const texture = flag("texture", "2048");
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const cli = join(root, "node_modules", "@gltf-transform", "cli", "bin", "cli.js");
-const work = join(root, "assets-src", ".tmp");
-rmSync(work, { recursive: true, force: true });
-mkdirSync(work, { recursive: true });
+const require = createRequire(import.meta.url);
+const cli = join(dirname(require.resolve("@gltf-transform/cli")), "..", "bin", "cli.js");
+const workRoot = resolve(root, "assets-src");
+mkdirSync(workRoot, { recursive: true });
+const work = mkdtempSync(join(workRoot, ".optimize-"));
 
 // Run the CLI entry with node directly: no shell, so paths with spaces are safe.
 const run = (...cliArgs) =>
@@ -59,6 +61,10 @@ step("meshopt", "--level", "high");
 
 mkdirSync(dirname(resolve(output)), { recursive: true });
 copyFileSync(step.last, resolve(output));
+// Delete only this run's verified temporary directory, never the source folder.
+if (dirname(resolve(work)) !== workRoot || !resolve(work).startsWith(join(workRoot, ".optimize-"))) {
+  throw new Error("Unexpected optimization temp path");
+}
 rmSync(work, { recursive: true, force: true });
 
 const mb = (p) => (statSync(p).size / 1024 / 1024).toFixed(2);

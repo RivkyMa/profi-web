@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui";
 
-/** Closing call to action. The shield sits centered behind it (stop "cta"). */
+/** Compact closing call to action. */
 export function FinalCta() {
   const whitepaperUrl = process.env.NEXT_PUBLIC_WHITEPAPER_URL;
 
@@ -8,7 +8,7 @@ export function FinalCta() {
     <section
       id="cta"
       aria-labelledby="cta-title"
-      className="relative flex min-h-dvh items-end px-[var(--gutter)] pt-24 pb-20"
+      className="relative border-t border-hair-2 px-[var(--gutter)] py-[var(--section)]"
     >
       <div className="mx-auto flex w-full max-w-[var(--max)] flex-col items-center gap-6 text-center">
         <h2

@@ -41,9 +41,9 @@ export function LaunchGates() {
       id="gates"
       eyebrow="Launch gates"
       title="Not live. Here is what must happen first."
-      description="PROFI runs on a testnet with mock data. These gates are required before it could accept real funds."
+      description="This MVP uses simulated data. These gates are required before PROFI could accept real funds."
     >
-      <ol ref={scope} className="grid max-w-3xl gap-3">
+      <ol ref={scope} className="grid gap-3 lg:grid-cols-2">
         {GATES.map((gate, i) => (
           <li
             key={gate.title}

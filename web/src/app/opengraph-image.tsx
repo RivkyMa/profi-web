@@ -1,4 +1,6 @@
 import { ImageResponse } from "next/og";
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 
 export const dynamic = "force-static";
 
@@ -42,6 +44,7 @@ async function loadFont(
 
 /** Static social card, generated at build time. Same three families as the site (D-048). */
 export default async function OpenGraphImage() {
+  const logo = await readFile(join(process.cwd(), "public/brand/profi-wordmark.png"), "base64");
   const [sora, manrope, plex] = await Promise.all([
     loadFont("Sora", 600, `PROFI${HEADLINE}`),
     loadFont("Manrope", 500, SUBLINE),
@@ -76,20 +79,16 @@ export default async function OpenGraphImage() {
           fontFamily: "sans-serif", // overridden per element once the fonts load
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-          <svg width="56" height="56" viewBox="0 0 64 64">
-            <path
-              d="M32 9 50 15v17c0 11-8 19-18 24-10-5-18-13-18-24V15Z"
-              fill="none"
-              stroke="#35d8cf"
-              strokeWidth="4"
-              strokeLinejoin="round"
-            />
-            <path d="m32 22 6 10-6 10-6-10Z" fill="#a43bd0" />
-          </svg>
-          <div style={{ fontSize: 44, letterSpacing: -1, fontFamily: display, fontWeight: 600 }}>
-            PROFI
-          </div>
+        <div style={{ display: "flex", position: "relative", width: 249, height: 80, overflow: "hidden" }}>
+          {/* ImageResponse renders the supplied local asset directly. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={`data:image/png;base64,${logo}`}
+            alt="PROFI"
+            width={326}
+            height={109}
+            style={{ position: "absolute", left: -42, top: -18 }}
+          />
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>

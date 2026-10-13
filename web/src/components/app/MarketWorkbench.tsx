@@ -1,11 +1,12 @@
 "use client";
 
+import { useQuoteSymbol } from "@/lib/use-quote-symbol";
+
 import { useMemo, useState } from "react";
 import { Badge, Button, Card, Checkbox, NumberField, SelectField } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { formatAmount, formatTokens } from "@/lib/format";
 import {
-  QUOTE,
   UNDERLYINGS,
   lotTerms,
   type MarketStatus,
@@ -109,6 +110,7 @@ export function FastForward({ market }: { market: MockMarket }) {
 }
 
 function DepositForm({ side, market }: { side: Side; market: MockMarket }) {
+  const QUOTE = useQuoteSymbol();
   const wallet = useAppStore((s) => s.wallet);
   const connect = useAppStore((s) => s.connect);
   const subscribe = useAppStore((s) => s.subscribe);
@@ -282,6 +284,7 @@ function MarketRow({
   selected: boolean;
   onSelect: () => void;
 }) {
+  const QUOTE = useQuoteSymbol();
   const t = lotTerms(market);
   const couponPct = Number((t.netCoupon * 10_000n) / t.principal) / 100;
   const filled = side === "earn" ? market.filledEarn : market.filledProtect;
@@ -339,6 +342,7 @@ function MarketRow({
  * position.
  */
 export function MarketWorkbench({ side }: { side: Side }) {
+  const QUOTE = useQuoteSymbol();
   const markets = useAppStore((s) => s.markets);
   const selectedId = useAppStore((s) => s.selectedMarketId);
   const select = useAppStore((s) => s.selectMarket);
@@ -359,8 +363,8 @@ export function MarketWorkbench({ side }: { side: Side }) {
   );
 
   const selected =
-    markets.find((m) => m.id === selectedId) ?? filtered[0] ?? markets[0];
-  if (!selected) {
+    filtered.find((m) => m.id === selectedId) ?? filtered[0];
+  if (markets.length === 0) {
     return (
       <Notice tone="info" title="No markets yet">
         {chainStatus === "loading"
@@ -370,7 +374,7 @@ export function MarketWorkbench({ side }: { side: Side }) {
     );
   }
 
-  const mine = positions.filter((p) => p.marketId === selected.id);
+  const mine = positions.filter((p) => p.marketId === selected?.id);
 
   return (
     <div className="grid gap-8 xl:grid-cols-[minmax(0,380px)_minmax(0,1fr)]">
@@ -403,7 +407,7 @@ export function MarketWorkbench({ side }: { side: Side }) {
                 key={m.id}
                 market={m}
                 side={side}
-                selected={m.id === selected.id}
+                selected={m.id === selected?.id}
                 onSelect={() => select(m.id)}
               />
             ))}
@@ -411,7 +415,7 @@ export function MarketWorkbench({ side }: { side: Side }) {
         )}
       </section>
 
-      <div className="flex min-w-0 flex-col gap-8">
+      {selected && <div className="flex min-w-0 flex-col gap-8">
         <Card padding="lg" className="flex flex-col gap-6">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
@@ -461,7 +465,7 @@ export function MarketWorkbench({ side }: { side: Side }) {
         </Card>
 
         <MarketOutcomes market={selected} />
-      </div>
+      </div>}
     </div>
   );
 }

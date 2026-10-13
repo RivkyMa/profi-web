@@ -1,8 +1,10 @@
+"use client";
+
+import { useQuoteSymbol } from "@/lib/use-quote-symbol";
 import { Badge, OutcomeCard } from "@/components/ui";
 import { formatDate } from "@/lib/dates";
 import { formatAmount, formatTokens } from "@/lib/format";
 import {
-  QUOTE,
   STATUS_LABEL,
   UNWIND_POLICY,
   lotTerms,
@@ -36,6 +38,7 @@ export function StatusBadge({ status }: { status: MarketStatus }) {
  * schedule with deadlines, and the unwind policy.
  */
 export function MarketTerms({ market }: { market: MockMarket }) {
+  const QUOTE = useQuoteSymbol();
   const t = lotTerms(market);
   const p = market.params;
   const s = market.schedule;
@@ -131,6 +134,7 @@ export function MarketTerms({ market }: { market: MockMarket }) {
 
 /** The terminal outcomes for one lot, side by side, losses included. */
 export function MarketOutcomes({ market }: { market: MockMarket }) {
+  const QUOTE = useQuoteSymbol();
   const paths = scenarioPaths(market.params);
   return (
     <section aria-label="All terminal outcomes" className="flex flex-col gap-4">

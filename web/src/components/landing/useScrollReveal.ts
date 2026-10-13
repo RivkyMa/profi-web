@@ -12,6 +12,8 @@ interface RevealOptions {
   selector: string;
   /** Starting vertical offset in px. */
   y?: number;
+  /** Optional horizontal growth for allocation bars. */
+  scaleX?: number;
   stagger?: number;
   /** ScrollTrigger start / end for the scrub. */
   start?: string;
@@ -26,6 +28,7 @@ interface RevealOptions {
 export function useScrollReveal<T extends HTMLElement>({
   selector,
   y = 56,
+  scaleX = 1,
   stagger = 0.12,
   start = "top 88%",
   end = "top 40%",
@@ -40,6 +43,7 @@ export function useScrollReveal<T extends HTMLElement>({
         if (targets.length === 0) return;
         gsap.from(targets, {
           y,
+          scaleX,
           autoAlpha: 0,
           ease: "none",
           stagger,
