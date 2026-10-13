@@ -14,6 +14,8 @@ import {
 import { Badge } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { useAppStore } from "@/lib/store";
+import { ChainStatus } from "./chain/ChainStatus";
+import { ChainTestTools } from "./chain/ChainTestTools";
 import { TxToaster } from "./TxToaster";
 import { WalletButton } from "./WalletButton";
 
@@ -68,11 +70,15 @@ function NavLinks({ orientation }: { orientation: "vertical" | "horizontal" }) {
  */
 export function AppShell({ children }: { children: ReactNode }) {
   const reset = useAppStore((s) => s.reset);
+  const source = useAppStore((s) => s.source);
+  const chainName = useAppStore((s) => s.chain?.name);
 
   return (
     <div className="flex min-h-dvh flex-col bg-ground-0">
       <div className="border-b border-pulse-deep/40 bg-pulse-dim px-[var(--gutter)] py-2 text-center font-mono text-[11px] tracking-[0.06em] text-pulse-light">
-        TESTNET / MOCK DATA. No real funds, no contracts, not audited, not live.
+        {source === "chain"
+          ? `TESTNET / MOCK DATA. Mock tokens and a mock oracle on ${chainName}. No real funds, not audited, not live.`
+          : "TESTNET / MOCK DATA. No real funds, no contracts, not audited, not live."}
       </div>
 
       <div className="flex flex-1">
@@ -92,14 +98,16 @@ export function AppShell({ children }: { children: ReactNode }) {
             <NavLinks orientation="vertical" />
           </div>
           <div className="flex flex-col gap-3 px-1">
-            <button
-              type="button"
-              onClick={reset}
-              className="flex h-9 cursor-pointer items-center gap-2 rounded-lg px-2 text-xs text-ink-3 transition-colors hover:text-ink-1"
-            >
-              <RotateCcw className="size-3.5" aria-hidden />
-              Reset demo data
-            </button>
+            {source === "mock" && (
+              <button
+                type="button"
+                onClick={reset}
+                className="flex h-9 cursor-pointer items-center gap-2 rounded-lg px-2 text-xs text-ink-3 transition-colors hover:text-ink-1"
+              >
+                <RotateCcw className="size-3.5" aria-hidden />
+                Reset demo data
+              </button>
+            )}
             <Link
               href="/"
               prefetch={false}
@@ -139,6 +147,8 @@ export function AppShell({ children }: { children: ReactNode }) {
             tabIndex={-1}
             className="mx-auto w-full max-w-[1280px] flex-1 px-[var(--gutter)] py-8 outline-none lg:py-10"
           >
+            <ChainStatus />
+            <ChainTestTools />
             {children}
           </main>
 

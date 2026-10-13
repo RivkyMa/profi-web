@@ -12,15 +12,22 @@ import {
 } from "@/lib/mock/vaults";
 import { useAppStore, type VaultDeposit } from "@/lib/store";
 import { parseUnits as u } from "@/lib/units";
+import { ChainEpochActions } from "./chain/ChainEpochActions";
 import { Notice, Stat } from "./primitives";
 
 const PHASE_LABEL: Record<EpochPhase, string> = {
   open: "Deposit window open",
   locked: "Locked",
   redeemable: "Redeemable",
+  aborted: "Aborted: withdraw your deposit",
 };
 
-const PHASE_TONE = { open: "pulse", locked: "steel", redeemable: "gain" } as const;
+const PHASE_TONE = {
+  open: "pulse",
+  locked: "steel",
+  redeemable: "gain",
+  aborted: "neutral",
+} as const;
 
 function Allocation({
   epoch,
@@ -72,6 +79,8 @@ function DepositRow({
   const markets = useAppStore((s) => s.markets);
   const cancel = useAppStore((s) => s.vaultCancel);
   const redeem = useAppStore((s) => s.vaultRedeem);
+  const source = useAppStore((s) => s.source);
+  const mock = source === "mock";
   const [busy, setBusy] = useState<"cancel" | "kind" | "cash" | null>(null);
 
   const outcome = epochOutcome(epoch, deposit.amount, markets);
@@ -103,7 +112,7 @@ function DepositRow({
         </Badge>
       </div>
 
-      {active && epoch.phase === "open" && (
+      {active && (epoch.phase === "open" || epoch.phase === "aborted") && (
         <div>
           <Button
             size="sm"
@@ -111,7 +120,7 @@ function DepositRow({
             loading={busy === "cancel"}
             onClick={() => run("cancel")}
           >
-            Cancel deposit (mock)
+            {mock ? "Cancel deposit (mock)" : "Withdraw deposit"}
           </Button>
         </div>
       )}
@@ -143,6 +152,7 @@ function DepositRow({
                 Downside tokens are shared pro rata, as they are.
               </dd>
             </div>
+            {mock && (
             <div className="rounded-lg bg-ground-1 p-4">
               <dt className="font-mono text-[11px] tracking-[0.08em] text-ink-3 uppercase">
                 In cash
@@ -155,19 +165,22 @@ function DepositRow({
                 value can differ.
               </dd>
             </div>
+            )}
           </dl>
           <div className="flex flex-wrap gap-2">
             <Button size="sm" loading={busy === "kind"} onClick={() => run("kind")}>
-              Redeem in kind (mock)
+              {mock ? "Redeem in kind (mock)" : "Redeem"}
             </Button>
-            <Button
-              size="sm"
-              variant="secondary"
-              loading={busy === "cash"}
-              onClick={() => run("cash")}
-            >
-              Redeem in cash (mock)
-            </Button>
+            {mock && (
+              <Button
+                size="sm"
+                variant="secondary"
+                loading={busy === "cash"}
+                onClick={() => run("cash")}
+              >
+                Redeem in cash (mock)
+              </Button>
+            )}
           </div>
         </div>
       )}
@@ -182,6 +195,8 @@ function EpochCard({ epoch }: { epoch: VaultEpoch }) {
   const deposits = useAppStore((s) => s.deposits);
   const deposit = useAppStore((s) => s.vaultDeposit);
   const advance = useAppStore((s) => s.advanceEpoch);
+  const source = useAppStore((s) => s.source);
+  const mockTag = source === "mock" ? " (mock)" : "";
 
   const [amount, setAmount] = useState(1000);
   const [busy, setBusy] = useState<"deposit" | "advance" | null>(null);
@@ -241,7 +256,13 @@ function EpochCard({ epoch }: { epoch: VaultEpoch }) {
             setMessage(null);
             const r = await deposit(epoch.id, amountUnits);
             setBusy(null);
-            setMessage(r.ok ? "Deposit confirmed (simulated)." : (r.message ?? "Failed."));
+            setMessage(
+              r.ok
+                ? source === "mock"
+                  ? "Deposit confirmed (simulated)."
+                  : "Deposit confirmed."
+                : (r.message ?? "Failed."),
+            );
           }}
         >
           <NumberField
@@ -256,11 +277,11 @@ function EpochCard({ epoch }: { epoch: VaultEpoch }) {
           <div className="flex flex-wrap items-center gap-3">
             {wallet.connected ? (
               <Button type="submit" loading={busy === "deposit"} disabled={Boolean(amountError)}>
-                Deposit to vault (mock)
+                {`Deposit to vault${mockTag}`}
               </Button>
             ) : (
               <Button type="button" onClick={connect}>
-                Connect wallet to deposit (mock)
+                {`Connect wallet to deposit${mockTag}`}
               </Button>
             )}
             {message && (
@@ -285,7 +306,9 @@ function EpochCard({ epoch }: { epoch: VaultEpoch }) {
         </div>
       )}
 
-      {epoch.phase !== "redeemable" && (
+      {epoch.chain && <ChainEpochActions epoch={epoch} />}
+
+      {!epoch.chain && epoch.phase !== "redeemable" && (
         <div className="flex flex-wrap items-center gap-3 rounded-lg border border-dashed border-hair-4 p-4">
           <p className="min-w-60 flex-1 text-xs text-ink-3">
             Mock time machine:{" "}
@@ -313,6 +336,8 @@ function EpochCard({ epoch }: { epoch: VaultEpoch }) {
 
 export function VaultsWorkbench() {
   const epochs = useAppStore((s) => s.epochs);
+  const chainStatus = useAppStore((s) => s.chain?.status);
+  const source = useAppStore((s) => s.source);
 
   return (
     <div className="flex flex-col gap-8">
@@ -323,6 +348,13 @@ export function VaultsWorkbench() {
         shared pro rata in kind. A vault carries the downside of every market
         it holds.
       </Notice>
+      {epochs.length === 0 && source === "chain" && (
+        <Notice tone="info" title="No vault epochs yet">
+          {chainStatus === "loading"
+            ? "Reading the chain..."
+            : "The vault manager has not opened an epoch on this chain."}
+        </Notice>
+      )}
       {epochs.map((e) => (
         <EpochCard key={e.id} epoch={e} />
       ))}

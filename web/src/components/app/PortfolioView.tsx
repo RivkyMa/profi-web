@@ -46,6 +46,7 @@ export function PortfolioView() {
   const deposits = useAppStore((s) => s.deposits);
   const wallet = useAppStore((s) => s.wallet);
   const seedDemo = useAppStore((s) => s.seedDemo);
+  const source = useAppStore((s) => s.source);
 
   const views = useMemo(() => {
     const byId = new Map(markets.map((m) => [m.id, m]));
@@ -103,13 +104,13 @@ export function PortfolioView() {
         <div className="max-w-md">
           <h2 className="font-display text-h3">Nothing here yet</h2>
           <p className="mt-2 text-ink-2">
-            Create a market in Studio, subscribe as Earn or Protect, or load a
-            demo portfolio to see claimable and locked positions, including a
-            market that unwound.
+            {source === "mock"
+              ? "Create a market in Studio, subscribe as Earn or Protect, or load a demo portfolio to see claimable and locked positions, including a market that unwound."
+              : "Connect a wallet, then subscribe as Earn or Protect in an open market, or create one in Studio. Positions you hold on this chain show up here."}
           </p>
         </div>
         <div className="flex flex-wrap justify-center gap-3">
-          <Button onClick={seedDemo}>Load demo portfolio (mock)</Button>
+          {source === "mock" && <Button onClick={seedDemo}>Load demo portfolio (mock)</Button>}
           <Button href="/app/studio" variant="secondary">
             Open Studio
           </Button>
@@ -181,8 +182,9 @@ export function PortfolioView() {
             ))}
           </ul>
           <p className="text-xs text-ink-3">
-            To see these settle, open the market in Earn or Protect and use the
-            mock time machine.
+            {source === "mock"
+              ? "To see these settle, open the market in Earn or Protect and use the mock time machine."
+              : "To move one along, open the market in Earn or Protect and follow its Market steps."}
           </p>
         </section>
       )}

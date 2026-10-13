@@ -24,6 +24,8 @@ const STATE_LABEL = {
  */
 export function PositionLine({ view }: { view: PositionView }) {
   const claim = useAppStore((s) => s.claim);
+  const source = useAppStore((s) => s.source);
+  const adapter = useAppStore((s) => s.adapter);
   const [busy, setBusy] = useState(false);
   const { market, position, side, state } = view;
   const unwound = view.closure === "unwind";
@@ -39,6 +41,7 @@ export function PositionLine({ view }: { view: PositionView }) {
           <Badge tone={STATE_TONE[state]} dot>
             {STATE_LABEL[state]}
           </Badge>
+          {market.status === "cancelled" && <Badge tone="neutral">Not matched: refund</Badge>}
           {view.closure && (
             <Badge tone={unwound ? "loss" : view.closure === "downside" ? "loss" : "gain"}>
               {unwound ? "Unwind" : CLOSURE_LABEL[view.closure]}
@@ -69,7 +72,21 @@ export function PositionLine({ view }: { view: PositionView }) {
             setBusy(false);
           }}
         >
-          Claim (mock)
+          {source === "mock" ? "Claim (mock)" : market.status === "cancelled" ? "Claim refund" : "Claim"}
+        </Button>
+      )}
+      {source === "chain" && state === "locked" && market.status === "subscribing" && adapter && (
+        <Button
+          size="sm"
+          variant="secondary"
+          loading={busy}
+          onClick={async () => {
+            setBusy(true);
+            await adapter.cancelPosition(side, market.id);
+            setBusy(false);
+          }}
+        >
+          Withdraw
         </Button>
       )}
     </li>

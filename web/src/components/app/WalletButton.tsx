@@ -4,6 +4,7 @@ import { Wallet } from "lucide-react";
 import { Button } from "@/components/ui";
 import { formatAmount } from "@/lib/format";
 import { useAppStore } from "@/lib/store";
+import { ChainWalletControls } from "./chain/lazy";
 
 /**
  * Mock wallet. Pure local state: "connecting" only flips a flag, no provider
@@ -16,6 +17,9 @@ export function WalletButton() {
   const disconnect = useAppStore((s) => s.disconnect);
   const failNext = useAppStore((s) => s.failNext);
   const setFailNext = useAppStore((s) => s.setFailNext);
+  const source = useAppStore((s) => s.source);
+
+  if (source === "chain" && ChainWalletControls) return <ChainWalletControls />;
 
   return (
     <div className="flex items-center gap-3">

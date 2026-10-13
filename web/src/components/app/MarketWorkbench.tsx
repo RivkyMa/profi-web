@@ -14,6 +14,7 @@ import {
 import { viewPosition, type Side } from "@/lib/portfolio";
 import { scenarioPaths, type ScenarioId } from "@/lib/scenarios";
 import { sideRemainingLots, useAppStore } from "@/lib/store";
+import { ChainMarketActions } from "./chain/ChainMarketActions";
 import { MarketOutcomes, MarketTerms, StatusBadge } from "./MarketTerms";
 import { Notice, Stat } from "./primitives";
 import { PositionLine } from "./PositionLine";
@@ -23,9 +24,11 @@ const ALL = "all";
 const STATUS_FILTERS: ReadonlyArray<{ value: MarketStatus | typeof ALL; label: string }> = [
   { value: ALL, label: "All statuses" },
   { value: "subscribing", label: "Open for deposits" },
+  { value: "awaiting", label: "Awaiting activation" },
   { value: "active", label: "Active" },
   { value: "settled", label: "Settled" },
   { value: "unwound", label: "Unwound" },
+  { value: "cancelled", label: "Cancelled" },
 ];
 
 const SCENARIO_LABEL: Record<ScenarioId, string> = {
@@ -109,6 +112,7 @@ function DepositForm({ side, market }: { side: Side; market: MockMarket }) {
   const wallet = useAppStore((s) => s.wallet);
   const connect = useAppStore((s) => s.connect);
   const subscribe = useAppStore((s) => s.subscribe);
+  const mockTag = useAppStore((s) => (s.source === "mock" ? " (mock)" : ""));
   const [lots, setLots] = useState(1);
   const [ack, setAck] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -149,7 +153,11 @@ function DepositForm({ side, market }: { side: Side; market: MockMarket }) {
       <Notice tone="info" title="Closed to new deposits">
         {market.status === "active"
           ? "Collateral is locked and the market is being observed."
-          : "This market has resolved. See your position below to claim."}
+          : market.status === "awaiting"
+            ? "The subscription window is over. The market is waiting to be activated (see Market steps below)."
+            : market.status === "cancelled"
+              ? "Nothing was matched, so every deposit is refunded. See your position below."
+              : "This market has resolved. See your position below to claim."}
       </Notice>
     );
   }
@@ -167,7 +175,7 @@ function DepositForm({ side, market }: { side: Side; market: MockMarket }) {
         setBusy(false);
         if (r.ok) {
           setAck(false);
-          setMessage("Deposit confirmed (simulated).");
+          setMessage(mockTag ? "Deposit confirmed (simulated)." : "Deposit confirmed.");
         } else setMessage(r.message ?? "Transaction failed.");
       }}
     >
@@ -246,11 +254,11 @@ function DepositForm({ side, market }: { side: Side; market: MockMarket }) {
       <div className="flex flex-wrap items-center gap-3">
         {wallet.connected ? (
           <Button type="submit" loading={busy} disabled={!canSubmit}>
-            {side === "earn" ? "Deposit (mock)" : "Deposit token and reserve (mock)"}
+            {side === "earn" ? `Deposit${mockTag}` : `Deposit token and reserve${mockTag}`}
           </Button>
         ) : (
           <Button type="button" onClick={connect}>
-            Connect wallet to deposit (mock)
+            {`Connect wallet to deposit${mockTag}`}
           </Button>
         )}
         {message && (
@@ -335,6 +343,7 @@ export function MarketWorkbench({ side }: { side: Side }) {
   const selectedId = useAppStore((s) => s.selectedMarketId);
   const select = useAppStore((s) => s.selectMarket);
   const positions = useAppStore((s) => (side === "earn" ? s.earn : s.protect));
+  const chainStatus = useAppStore((s) => s.chain?.status);
 
   const [underlying, setUnderlying] = useState<string>(ALL);
   const [status, setStatus] = useState<MarketStatus | typeof ALL>(ALL);
@@ -351,6 +360,16 @@ export function MarketWorkbench({ side }: { side: Side }) {
 
   const selected =
     markets.find((m) => m.id === selectedId) ?? filtered[0] ?? markets[0];
+  if (!selected) {
+    return (
+      <Notice tone="info" title="No markets yet">
+        {chainStatus === "loading"
+          ? "Reading the chain..."
+          : "Nothing has been created on this chain yet. Create a market in Studio."}
+      </Notice>
+    );
+  }
+
   const mine = positions.filter((p) => p.marketId === selected.id);
 
   return (
@@ -434,7 +453,11 @@ export function MarketWorkbench({ side }: { side: Side }) {
               ))}
             </ul>
           )}
-          <FastForward market={selected} />
+          {selected.chain ? (
+            <ChainMarketActions market={selected} />
+          ) : (
+            <FastForward market={selected} />
+          )}
         </Card>
 
         <MarketOutcomes market={selected} />

@@ -10,6 +10,8 @@ const ERROR_MS = 9_000;
 
 function ToastItem({ tx }: { tx: Tx }) {
   const dismiss = useAppStore((s) => s.dismissTx);
+  const source = useAppStore((s) => s.source);
+  const explorer = useAppStore((s) => s.chain?.explorerUrl);
 
   useEffect(() => {
     if (tx.status === "pending") return;
@@ -46,10 +48,33 @@ function ToastItem({ tx }: { tx: Tx }) {
       <div className="min-w-0 flex-1 text-sm">
         <p className="font-medium text-ink-1">{tx.label}</p>
         <p className="text-xs text-ink-2">
-          {tx.status === "pending" && "Pending: waiting for the mock network..."}
-          {tx.status === "success" && "Confirmed (simulated)."}
+          {tx.status === "pending" &&
+            `Pending: ${
+              tx.message ??
+              (source === "mock" ? "waiting for the mock network..." : "waiting for the network...")
+            }`}
+          {tx.status === "success" &&
+            (source === "mock" ? "Confirmed (simulated)." : "Confirmed on chain.")}
           {tx.status === "error" && (tx.message ?? "Failed.")}
         </p>
+        {tx.hash && (
+          <p className="font-mono text-[11px] text-ink-3">
+            {explorer ? (
+              <a
+                href={`${explorer}/tx/${tx.hash}`}
+                target="_blank"
+                rel="noreferrer"
+                className="underline underline-offset-2"
+              >
+                {tx.hash.slice(0, 10)}...{tx.hash.slice(-6)}
+              </a>
+            ) : (
+              <span>
+                {tx.hash.slice(0, 10)}...{tx.hash.slice(-6)}
+              </span>
+            )}
+          </p>
+        )}
       </div>
       <button
         type="button"

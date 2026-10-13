@@ -16,7 +16,13 @@ const pct = (bps: number) => `${(bps / 100).toFixed(bps % 100 === 0 ? 0 : 1)}%`;
 
 export function StatusBadge({ status }: { status: MarketStatus }) {
   const tone =
-    status === "subscribing" ? "pulse" : status === "active" ? "steel" : status === "unwound" ? "loss" : "neutral";
+    status === "subscribing"
+      ? "pulse"
+      : status === "active" || status === "awaiting"
+        ? "steel"
+        : status === "unwound"
+          ? "loss"
+          : "neutral";
   return (
     <Badge tone={tone} dot>
       {STATUS_LABEL[status]}

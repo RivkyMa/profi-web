@@ -65,6 +65,9 @@ export function StudioWorkbench() {
   const wallet = useAppStore((s) => s.wallet);
   const connect = useAppStore((s) => s.connect);
   const createMarket = useAppStore((s) => s.createMarket);
+  const source = useAppStore((s) => s.source);
+  const prices = useAppStore((s) => s.chain?.prices);
+  const mockTag = source === "mock" ? " (mock)" : "";
 
   const [form, setForm] = useState<FormState>(INITIAL);
   const [busy, setBusy] = useState(false);
@@ -79,7 +82,12 @@ export function StudioWorkbench() {
   const draft = toDraft(form);
   const issues = validateDraft(draft);
   const valid = issues.length === 0;
-  const params = valid ? draftToParams(draft) : null;
+  // On a chain the strike is the oracle's latest price, so preview with that.
+  const strikes: Record<string, bigint> = {};
+  if (source === "chain" && prices) {
+    for (const [symbol, p] of Object.entries(prices)) strikes[symbol] = p.price;
+  }
+  const params = valid ? draftToParams(draft, strikes) : null;
 
   const T = TEMPLATE;
   const bad = (cond: boolean, msg: string) => (cond ? msg : null);
@@ -151,7 +159,11 @@ export function StudioWorkbench() {
           value={form.underlying}
           onChange={(v) => set("underlying", v)}
           options={UNDERLYINGS.map((u) => ({ value: u.symbol, label: u.name }))}
-          hint={`Quote token ${QUOTE}. Strike is the mock reference price (${underlyingInfo?.refPrice} ${QUOTE}).`}
+          hint={
+            source === "mock"
+              ? `Quote token ${QUOTE}. Strike is the mock reference price (${underlyingInfo?.refPrice} ${QUOTE}).`
+              : `Quote token ${QUOTE}. The strike is the mock oracle's latest price when the market is created (${prices?.[form.underlying] ? formatAmount(prices[form.underlying].price) : "no price yet"} ${QUOTE}).`
+          }
         />
         <NumberField
           label="Tokens per lot"
@@ -250,20 +262,23 @@ export function StudioWorkbench() {
 
         {wallet.connected ? (
           <Button type="submit" size="lg" loading={busy} disabled={!valid}>
-            Create market (mock)
+            {`Create market${mockTag}`}
           </Button>
         ) : (
           <Button type="button" size="lg" onClick={connect}>
-            Connect wallet to create (mock)
+            {`Connect wallet to create${mockTag}`}
           </Button>
         )}
 
         {created && (
           <div className="flex flex-col gap-3 rounded-lg border border-gain/40 bg-gain/10 p-4 text-sm">
-            <p className="font-medium text-ink-1">Market created (simulated).</p>
+            <p className="font-medium text-ink-1">
+              {source === "mock" ? "Market created (simulated)." : "Market created on chain."}
+            </p>
             <p className="text-ink-2">
-              It is open for deposits now. Subscribe on both sides, then
-              fast-forward it to see settlement.
+              {source === "mock"
+                ? "It is open for deposits now. Subscribe on both sides, then fast-forward it to see settlement."
+                : "It is open for deposits for 3 days. Subscribe on both sides, then follow its Market steps to activate, observe and settle it."}
             </p>
             <div className="flex flex-wrap gap-2">
               <Button href="/app/earn" size="sm">
