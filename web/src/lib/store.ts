@@ -1,10 +1,18 @@
 /**
- * Local mock state for the dashboard (zustand). There is no backend: every
- * action is a simulated transaction that goes pending -> success / error, so
- * the demo feels live. A "simulate failure" switch makes the next one revert.
+ * Dashboard state (zustand). Two sources feed the same shape:
+ *
+ *  - mock (default, and the only mode on GitHub Pages): there is no backend, so
+ *    every action is a simulated transaction that goes pending -> success /
+ *    error. A "simulate failure" switch makes the next one revert.
+ *  - chain: a ChainAdapter, installed by the chain bridge, performs real
+ *    transactions and the bridge replaces markets / positions / epochs with
+ *    what it reads. Components do not know the difference.
  */
 
 import { create } from "zustand";
+import type { ChainAdapter, EpochOp, MarketOp } from "./chain/adapter-types";
+import { chainSetup } from "./chain/config";
+import type { ChainModel } from "./chain/mapping";
 import { addDays, DEMO_TODAY } from "./dates";
 import {
   draftToParams,
@@ -31,6 +39,26 @@ export interface Tx {
   label: string;
   status: TxStatus;
   message?: string;
+  /** Transaction hash, once one exists (chain mode). */
+  hash?: string;
+}
+
+export type DataSource = "mock" | "chain";
+
+/** What the dashboard knows about the connected network (chain mode only). */
+export interface ChainInfo {
+  status: "loading" | "ready" | "error";
+  error: string | null;
+  chainId: number;
+  name: string;
+  isLocal: boolean;
+  explorerUrl: string | null;
+  /** Latest block timestamp in unix seconds: the chain's "now". */
+  now: number | null;
+  /** Full address of the connected account. */
+  account: string | null;
+  /** Latest mock-oracle price per underlying symbol. */
+  prices: Record<string, { price: bigint; updatedAt: number }>;
 }
 
 export interface VaultDeposit {
@@ -57,6 +85,8 @@ export interface ActionResult {
 
 const MOCK_ADDRESS = "0xDEMO...0001";
 
+const emptyWallet = (): Wallet => ({ connected: false, address: "", musd: 0n, tokens: {} });
+
 const initialWallet = (): Wallet => ({
   connected: false,
   address: MOCK_ADDRESS,
@@ -74,6 +104,9 @@ const sleep = (ms: number) =>
   ms <= 0 ? Promise.resolve() : new Promise((r) => setTimeout(r, ms));
 
 interface State {
+  source: DataSource;
+  chain: ChainInfo | null;
+  adapter: ChainAdapter | null;
   wallet: Wallet;
   failNext: boolean;
   markets: MockMarket[];
@@ -87,6 +120,23 @@ interface State {
 }
 
 interface Actions {
+  /** Chain mode: the bridge installs (or clears) the adapter that performs real transactions. */
+  setAdapter: (adapter: ChainAdapter | null) => void;
+  /** Chain mode: replace markets, positions, epochs and balances with what was read. */
+  applyChain: (model: ChainModel, meta: { account: string | null }) => void;
+  setChainStatus: (status: ChainInfo["status"], error?: string | null) => void;
+  /** Chain mode: set when a wallet connects or disconnects. */
+  setChainAccount: (account: string | null) => void;
+  /** Fall back to the mock demo when the chain cannot be reached. */
+  switchToMock: () => void;
+  /** Runs a chain operation as a tracked transaction in the toaster. */
+  trackTx: (
+    label: string,
+    run: (progress: (message: string, hash?: string) => void) => Promise<ActionResult>,
+  ) => Promise<ActionResult>;
+  marketAction: (marketId: string, op: MarketOp) => Promise<ActionResult>;
+  epochAction: (epochId: number, op: EpochOp) => Promise<ActionResult>;
+
   connect: () => void;
   disconnect: () => void;
   setFailNext: (value: boolean) => void;
@@ -109,18 +159,51 @@ interface Actions {
 
 export type AppStore = State & Actions;
 
-const initialState = (): State => ({
-  wallet: initialWallet(),
-  failNext: false,
-  markets: seedMarkets(),
-  earn: [],
-  protect: [],
-  epochs: seedEpochs(),
-  deposits: [],
-  txs: [],
-  selectedMarketId: "tsla-4w-a",
-  counter: 0,
-});
+const INITIAL_SOURCE: DataSource = chainSetup.mode === "chain" ? "chain" : "mock";
+
+/** Mock markets and epochs are fake and must not flash up before a chain is read. */
+const initialState = (source: DataSource = INITIAL_SOURCE): State =>
+  source === "chain" && chainSetup.mode === "chain"
+    ? {
+        source,
+        chain: {
+          status: "loading",
+          error: null,
+          chainId: chainSetup.config.chainId,
+          name: chainSetup.config.name,
+          isLocal: chainSetup.config.isLocal,
+          explorerUrl: chainSetup.config.explorerUrl,
+          now: null,
+          account: null,
+          prices: {},
+        },
+        adapter: null,
+        wallet: emptyWallet(),
+        failNext: false,
+        markets: [],
+        earn: [],
+        protect: [],
+        epochs: [],
+        deposits: [],
+        txs: [],
+        selectedMarketId: null,
+        counter: 0,
+      }
+    : {
+        source: "mock",
+        chain: null,
+        adapter: null,
+        wallet: initialWallet(),
+        failNext: false,
+        markets: seedMarkets(),
+        earn: [],
+        protect: [],
+        epochs: seedEpochs(),
+        deposits: [],
+        txs: [],
+        selectedMarketId: "tsla-4w-a",
+        counter: 0,
+      };
 
 export const useAppStore = create<AppStore>()((set, get) => {
   const pushTx = (tx: Omit<Tx, "id">): number => {
@@ -171,14 +254,102 @@ export const useAppStore = create<AppStore>()((set, get) => {
   return {
     ...initialState(),
 
-    connect: () => set((s) => ({ wallet: { ...s.wallet, connected: true } })),
-    disconnect: () => set((s) => ({ wallet: { ...s.wallet, connected: false } })),
+    setAdapter: (adapter) => set({ adapter }),
+
+    applyChain: (model, meta) =>
+      set((s) => {
+        const chain = s.chain;
+        if (s.source !== "chain" || !chain) return s;
+        const selected =
+          s.selectedMarketId && model.markets.some((m) => m.id === s.selectedMarketId)
+            ? s.selectedMarketId
+            : (model.markets[0]?.id ?? null);
+        return {
+          chain: {
+            ...chain,
+            status: "ready",
+            error: null,
+            now: model.now,
+            account: meta.account,
+            prices: model.prices,
+          },
+          markets: model.markets,
+          earn: model.earn,
+          protect: model.protect,
+          epochs: model.epochs,
+          deposits: model.deposits,
+          selectedMarketId: selected,
+          wallet: {
+            connected: meta.account !== null,
+            address: meta.account ? shortAddress(meta.account) : "",
+            musd: model.balances?.musd ?? 0n,
+            tokens: model.balances?.tokens ?? {},
+          },
+        };
+      }),
+
+    setChainStatus: (status, error = null) =>
+      set((s) => (s.chain ? { chain: { ...s.chain, status, error } } : s)),
+
+    setChainAccount: (account) =>
+      set((s) =>
+        s.chain
+          ? {
+              chain: { ...s.chain, account },
+              wallet: account
+                ? { ...s.wallet, connected: true, address: shortAddress(account) }
+                : emptyWallet(),
+              ...(account ? {} : { earn: [], protect: [], deposits: [] }),
+            }
+          : s,
+      ),
+
+    switchToMock: () => set({ ...initialState("mock") }),
+
+    trackTx: async (label, run) => {
+      const id = pushTx({ label, status: "pending" });
+      try {
+        const result = await run((message, hash) =>
+          updateTx(id, { message, ...(hash ? { hash } : {}) }),
+        );
+        if (result.ok) updateTx(id, { status: "success", message: result.message });
+        else updateTx(id, { status: "error", message: result.message ?? "Failed." });
+        return result;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Failed.";
+        updateTx(id, { status: "error", message });
+        return { ok: false, message };
+      }
+    },
+
+    marketAction: async (marketId, op) => {
+      const a = get().adapter;
+      return a ? a.marketAction(marketId, op) : { ok: false, message: "No chain connected." };
+    },
+
+    epochAction: async (epochId, op) => {
+      const a = get().adapter;
+      return a ? a.epochAction(epochId, op) : { ok: false, message: "No chain connected." };
+    },
+
+    connect: () => {
+      const a = get().adapter;
+      if (a) a.connect();
+      else set((s) => ({ wallet: { ...s.wallet, connected: true } }));
+    },
+    disconnect: () => {
+      const a = get().adapter;
+      if (a) a.disconnect();
+      else set((s) => ({ wallet: { ...s.wallet, connected: false } }));
+    },
     setFailNext: (value) => set({ failNext: value }),
     selectMarket: (id) => set({ selectedMarketId: id }),
     dismissTx: (id) => set((s) => ({ txs: s.txs.filter((t) => t.id !== id) })),
 
     subscribe: (side, marketId, lots) =>
-      tx(
+      get().adapter
+        ? get().adapter!.subscribe(side, marketId, lots)
+        : tx(
         `${side === "earn" ? "Earn deposit" : "Protect deposit"}: ${lots} lot${lots === 1 ? "" : "s"}`,
         (s) => {
           const m = s.markets.find((x) => x.id === marketId);
@@ -229,6 +400,8 @@ export const useAppStore = create<AppStore>()((set, get) => {
       ),
 
     createMarket: (draft) => {
+      const adapter = get().adapter;
+      if (adapter) return adapter.createMarket(draft);
       let createdId: string | undefined;
       return tx(
         "Studio: create market",
@@ -293,7 +466,9 @@ export const useAppStore = create<AppStore>()((set, get) => {
       ),
 
     claim: (side, positionId) =>
-      tx(
+      get().adapter
+        ? get().adapter!.claim(side, positionId)
+        : tx(
         "Claim settlement",
         (s) => {
           const list = side === "earn" ? s.earn : s.protect;
@@ -324,7 +499,9 @@ export const useAppStore = create<AppStore>()((set, get) => {
       ),
 
     vaultDeposit: (epochId, amount) =>
-      tx(
+      get().adapter
+        ? get().adapter!.vaultDeposit(epochId, amount)
+        : tx(
         `Vault epoch ${epochId}: deposit`,
         (s) => {
           const e = s.epochs.find((x) => x.id === epochId);
@@ -349,7 +526,9 @@ export const useAppStore = create<AppStore>()((set, get) => {
       ),
 
     vaultCancel: (depositId) =>
-      tx(
+      get().adapter
+        ? get().adapter!.vaultCancel(depositId)
+        : tx(
         "Vault: cancel deposit",
         (s) => {
           const d = s.deposits.find((x) => x.id === depositId);
@@ -387,7 +566,9 @@ export const useAppStore = create<AppStore>()((set, get) => {
       ),
 
     vaultRedeem: (depositId, mode) =>
-      tx(
+      get().adapter
+        ? get().adapter!.vaultRedeem(depositId, mode)
+        : tx(
         `Vault: redeem ${mode === "kind" ? "in kind" : "in cash"}`,
         (s) => {
           const d = s.deposits.find((x) => x.id === depositId);
@@ -421,6 +602,7 @@ export const useAppStore = create<AppStore>()((set, get) => {
 
     seedDemo: () =>
       set((s) => {
+        if (s.source === "chain") return s;
         if (s.earn.length + s.protect.length + s.deposits.length > 0) return s;
         const mk = (side: Side, marketId: string, lots: number): Position => ({
           id: `${side}-demo-${marketId}`,
@@ -443,9 +625,14 @@ export const useAppStore = create<AppStore>()((set, get) => {
         };
       }),
 
-    reset: () => set(initialState()),
+    reset: () => set((s) => (s.source === "chain" ? s : initialState("mock"))),
   };
 });
+
+/** "0x1234...abcd". */
+export function shortAddress(address: string): string {
+  return address.length > 12 ? `${address.slice(0, 6)}...${address.slice(-4)}` : address;
+}
 
 export const sideRemainingLots = (m: MockMarket, side: Side) =>
   m.capLots - (side === "earn" ? m.filledEarn : m.filledProtect);

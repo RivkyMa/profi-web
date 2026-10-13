@@ -6,6 +6,8 @@
 import { simulate, type Closure, type PayoffResult } from "./payoff";
 import { findScenario, runScenario } from "./scenarios";
 import { lotTerms, type MockMarket } from "./mock/markets";
+import { Closure as ChainClosure } from "@profi/shared";
+import { payoutFor } from "./chain/settlement";
 
 export type Side = "earn" | "protect";
 
@@ -45,11 +47,58 @@ export function marketResult(
   return runScenario(params, findScenario(params, market.resolution));
 }
 
+const CHAIN_CLOSURE: Record<number, Closure | null> = {
+  [ChainClosure.None]: null,
+  [ChainClosure.Early]: "early",
+  [ChainClosure.Normal]: "normal",
+  [ChainClosure.Downside]: "downside",
+  [ChainClosure.Unwind]: "unwind",
+};
+
+/** A position in a market that was read from a chain: amounts come from its pools. */
+function viewChainPosition(
+  side: Side,
+  position: Position,
+  market: MockMarket,
+): PositionView {
+  const d = market.chain!;
+  const lots = BigInt(position.lots);
+  const owed = payoutFor(side, lots, d);
+
+  if (!owed) {
+    const terms = lotTerms(market);
+    return {
+      position,
+      side,
+      market,
+      state: "locked",
+      locked:
+        side === "earn"
+          ? { cash: terms.principal * lots, tokens: 0n }
+          : { cash: terms.reserve * lots, tokens: terms.tokens * lots },
+      payout: null,
+      result: null,
+      closure: null,
+    };
+  }
+  return {
+    position,
+    side,
+    market,
+    state: position.claimed ? "claimed" : "claimable",
+    locked: null,
+    payout: owed,
+    result: null,
+    closure: CHAIN_CLOSURE[d.closure] ?? null,
+  };
+}
+
 export function viewPosition(
   side: Side,
   position: Position,
   market: MockMarket,
 ): PositionView {
+  if (market.chain) return viewChainPosition(side, position, market);
   const terms = lotTerms(market);
   const lots = BigInt(position.lots);
   const result = marketResult(market, position.lots);

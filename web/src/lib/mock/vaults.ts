@@ -11,13 +11,15 @@ import { runScenario, findScenario, type ScenarioId } from "../scenarios";
 import { SCALE, parseUnits as u } from "../units";
 import { lotTerms, type MockMarket } from "./markets";
 
-export type EpochPhase = "open" | "locked" | "redeemable";
+export type EpochPhase = "open" | "locked" | "redeemable" | "aborted";
 
 export interface VaultAllocation {
   marketId: string;
   weightBps: number;
-  /** How this allocation resolves once the epoch becomes redeemable (mock). */
-  outcome: ScenarioId;
+  /** How this allocation resolves once the epoch becomes redeemable (mock only). */
+  outcome?: ScenarioId;
+  /** Lots the epoch actually subscribed at lock (chain only; 0 when it did not). */
+  lots?: bigint;
 }
 
 export interface VaultEpoch {
@@ -31,6 +33,18 @@ export interface VaultEpoch {
   deposited: bigint;
   allocations: VaultAllocation[];
   cashBufferBps: number;
+  /** Present only for epochs read from a chain: the settled amounts. */
+  chain?: {
+    /** Stable the epoch can pay out once settled (0 before). */
+    settledStable: bigint;
+    /** Total shares outstanding (= stable deposited). */
+    totalShares: bigint;
+    /** Tokens the epoch ended up holding, by underlying symbol. */
+    tokens: Record<string, bigint>;
+    /** Exact deadlines in unix seconds (the ISO strings above drop the seconds). */
+    depositClosesAt: number;
+    lockByAt: number;
+  };
 }
 
 export function seedEpochs(): VaultEpoch[] {
@@ -111,6 +125,8 @@ export function epochOutcome(
   amount: bigint,
   markets: readonly MockMarket[],
 ): VaultOutcome {
+  if (epoch.chain) return chainEpochOutcome(epoch, epoch.chain, amount);
+
   const parts: VaultPartOutcome[] = [];
   let cash = (amount * BigInt(epoch.cashBufferBps)) / 10_000n;
   const buffer = cash;
@@ -121,7 +137,7 @@ export function epochOutcome(
     const m = markets.find((x) => x.id === alloc.marketId);
     if (!m) continue;
     const allocated = (amount * BigInt(alloc.weightBps)) / 10_000n;
-    const path = findScenario(m.params, alloc.outcome);
+    const path = findScenario(m.params, alloc.outcome ?? "above");
     const result = runScenario(m.params, path);
     const { principal } = lotTerms(m);
 
@@ -141,9 +157,32 @@ export function epochOutcome(
       cash: partCash,
       tokens: partTokens,
       lastPrice,
-      outcome: alloc.outcome,
+      outcome: alloc.outcome ?? "above",
     });
   }
 
   return { parts, buffer, cash, tokens, cashOnly: cash + tokenValue };
+}
+
+/**
+ * An epoch read from a chain pays pro rata in kind: each share gets the same
+ * fraction of the settled stable and of every token the epoch holds. Before
+ * settlement nothing is known, so the outcome is empty.
+ */
+function chainEpochOutcome(
+  epoch: VaultEpoch,
+  chain: NonNullable<VaultEpoch["chain"]>,
+  shares: bigint,
+): VaultOutcome {
+  if (epoch.phase !== "redeemable" || chain.totalShares === 0n) {
+    return { parts: [], buffer: 0n, cash: 0n, tokens: {}, cashOnly: 0n };
+  }
+  const cash = (chain.settledStable * shares) / chain.totalShares;
+  const tokens: Record<string, bigint> = {};
+  for (const [symbol, amount] of Object.entries(chain.tokens)) {
+    const part = (amount * shares) / chain.totalShares;
+    if (part > 0n) tokens[symbol] = part;
+  }
+  // The contract only redeems in kind, so there is no cash-only valuation.
+  return { parts: [], buffer: 0n, cash, tokens, cashOnly: cash };
 }

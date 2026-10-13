@@ -4,6 +4,7 @@
  * nothing is connected to any chain.
  */
 
+import type { ChainMarketData } from "../chain/model";
 import { addDays, DEMO_TODAY } from "../dates";
 import { deriveTerms, validateParams, type PayoffParams } from "../payoff";
 import type { ScenarioId } from "../scenarios";
@@ -25,7 +26,17 @@ export const UNDERLYINGS: readonly Underlying[] = [
   { symbol: "AMZN", name: "Tokenized AMZN (mock)", refPrice: "185" },
 ];
 
-export type MarketStatus = "subscribing" | "active" | "settled" | "unwound";
+/**
+ * subscribing: open for deposits. awaiting: subscription is over but nobody has
+ * activated the market yet (chain mode). cancelled: nothing matched (chain mode).
+ */
+export type MarketStatus =
+  | "subscribing"
+  | "awaiting"
+  | "active"
+  | "settled"
+  | "unwound"
+  | "cancelled";
 
 export interface MarketSchedule {
   subscribeBy: string;
@@ -51,6 +62,8 @@ export interface MockMarket {
   status: MarketStatus;
   /** Present once the market has settled or unwound. */
   resolution?: ScenarioId;
+  /** Present only for markets read from a chain (see lib/chain). */
+  chain?: ChainMarketData;
 }
 
 export const UNWIND_POLICY =
@@ -166,9 +179,11 @@ export function remainingLots(m: MockMarket): number {
 
 export const STATUS_LABEL: Record<MarketStatus, string> = {
   subscribing: "Open for deposits",
+  awaiting: "Awaiting activation",
   active: "Active",
   settled: "Settled",
   unwound: "Unwound",
+  cancelled: "Cancelled (not matched)",
 };
 
 // ---------------------------------------------------------------- Studio
@@ -209,9 +224,16 @@ export const DEFAULT_DRAFT: MarketDraft = {
   everyDays: 7,
 };
 
-export function draftToParams(d: MarketDraft): PayoffParams {
+/**
+ * Per-lot parameters for a draft. `strikes` overrides the mock reference price
+ * per symbol: in chain mode the strike is the oracle's latest price.
+ */
+export function draftToParams(
+  d: MarketDraft,
+  strikes: Readonly<Record<string, bigint>> = {},
+): PayoffParams {
   const ref = UNDERLYINGS.find((x) => x.symbol === d.underlying) ?? UNDERLYINGS[0];
-  const strike = u(ref.refPrice);
+  const strike = strikes[d.underlying] ?? u(ref.refPrice);
   const tokensPerLot = u(String(Math.max(0, Math.floor(d.tokensPerLot))));
   const principal = (tokensPerLot * strike) / 1_000_000n;
   return {
