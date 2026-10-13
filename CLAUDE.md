@@ -18,7 +18,7 @@ npm run build       # next build (must pass; missing 3D assets must never break 
 npm run lint        # eslint .
 npm run typecheck   # next typegen && tsc --noEmit
 npm test            # vitest run
-npm run assets:optimize   # raw GLB (assets-src/, git-ignored) -> public/models/
+npm run assets:optimize   # raw GLBs (assets-src/, git-ignored) -> public/models/ (all three models)
 ```
 
 ## Stack (don't swap without a strong reason)
@@ -98,6 +98,11 @@ Also: equality at B and at A, missed observation -> unwind.
 ## Code map (follow-ups)
 - Landing sections now include `vaults` (`VaultsShowcase.tsx`) between products and payoff; the stop list in `ShieldChoreography.tsx` must keep that order. The vault is a second object in the same canvas (`VaultRig`, `sceneState.vault`).
 - `?3d=on` forces the 3D scene (see D-044).
+
+## Code map (model revision, D-045 to D-047)
+- Models: `monument.glb` (main object), `exchange.glb` (Vaults section + Vaults header), `monument-mini.glb` (portfolio). `npm run assets:optimize` rebuilds all three from `assets-src/{bitcoin_monument_,exchange_building}.glb`.
+- Names were kept: "shield" (`ShieldModel`, `ShieldRig`, `ShieldChoreography`, `ShieldFallback`) is the main-object slot, "vault" (`VaultRig`, `sceneState.vault`) the second-object slot.
+- Both models are thin and one-faced: keep rotY within about +-0.6 rad in `STOPS`; the dashboard accents sway instead of spinning.
 
 ## Code map (Phase 5)
 - `src/app/{icon.svg,opengraph-image.tsx,robots.ts,sitemap.ts,not-found.tsx,error.tsx}`: SEO and error surfaces. Root layout has the metadata and the skip link; every page's `<main>` has `id="main"`.

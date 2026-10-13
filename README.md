@@ -115,13 +115,13 @@ Also covered: equality at the barrier and at the autocall level, a missed observ
 ## Landing page
 
 - Lenis smooth scroll is synchronized with ScrollTrigger through GSAP's ticker (one provider, full cleanup).
-- The shield is driven by ScrollTrigger through a shared object (`src/lib/scene-state.ts`), read in `useFrame`. Scrolling never causes a React render.
-- The shield's position, scale and rotation are a pure function of scroll position (`ShieldChoreography`), plus per-section nudges from the two pinned timelines.
-- `prefers-reduced-motion`: no smooth scroll, no pinning, no scrubbed motion, the shield stays still, and all copy stays visible.
-- Weak devices (no WebGL, Save-Data, 2 GB or less memory, 2 cores or fewer) get a static shield instead of a canvas. If a device cannot sustain about 18 fps for two consecutive 3-second windows, the scene gives up and the static shield takes over for the session.
+- The main object (a coin monument) is driven by ScrollTrigger through a shared object (`src/lib/scene-state.ts`), read in `useFrame`. Scrolling never causes a React render.
+- Its position, scale and rotation are a pure function of scroll position (`ShieldChoreography`), plus per-section nudges from the two pinned timelines.
+- `prefers-reduced-motion`: no smooth scroll, no pinning, no scrubbed motion, the monument stays still, and all copy stays visible.
+- Weak devices (no WebGL, Save-Data, 2 GB or less memory, 2 cores or fewer) get a static monument (SVG) instead of a canvas. If a device cannot sustain about 18 fps for two consecutive 3-second windows, the scene gives up and the static monument takes over for the session.
 - Text is never blocked by model loading; a missing GLB renders a procedural placeholder.
-- The vault has its own landing section. Its model lives in the same fixed canvas and trades places with the shield as you scroll (the shield shrinks away, the vault grows in place). Its GLB is only requested when that section is about two screens away.
-- Add `?3d=on` to the URL to force the 3D scene on a device that was downgraded to the static shield (weak-device heuristics or the FPS give-up).
+- The Vaults section has its own model (an exchange building). It lives in the same fixed canvas and trades places with the monument as you scroll (the monument shrinks away, the building grows in place). Its GLB is only requested when that section is about two screens away.
+- Add `?3d=on` to the URL to force the 3D scene on a device that was downgraded to the static monument (weak-device heuristics or the FPS give-up).
 
 ## Mock dashboard
 
@@ -159,9 +159,11 @@ Until the file exists, the procedural placeholder named in the entry is rendered
 
 | Model | Raw | Optimized | Used for |
 | --- | --- | --- | --- |
-| `shield.glb` | 54 MB, 1.06M triangles, 4096 px textures | 1.6 MB, 84.5k triangles, 2048 px WebP, meshopt | Landing background scene |
-| `vault.glb` | 109 MB, 2.82M triangles | 1.2 MB, 85k triangles, 1024 px | Landing Vaults section (background canvas) and Vaults page header |
-| `shield-mini.glb` | (from the shield) | 0.4 MB, 512 px | Portfolio empty state |
+| `monument.glb` | 31 MB, 301k triangles, 4096 px textures | 1.3 MB, 84k triangles, 2048 px WebP, meshopt | Landing background scene (main object) |
+| `exchange.glb` | 32 MB, 396k triangles | 0.8 MB, 83k triangles, 1024 px | Landing Vaults section (background canvas) and Vaults page header |
+| `monument-mini.glb` | (from the monument) | 0.3 MB, 30k triangles, 512 px | Portfolio empty state |
+
+`npm run assets:optimize` rebuilds all three from `assets-src/`. Component names still say "shield" and "vault": those are the scene's main-object and second-object slots (see D-045).
 
 Meshopt is used instead of Draco so no decoder is downloaded at runtime. Lighting is procedural (`Lightformer`), so there is no HDR download either.
 
@@ -171,7 +173,7 @@ The full log, with reasoning, is in [`DECISIONS.md`](./DECISIONS.md). The ones t
 
 - **Integer money.** `bigint` with 6 decimals everywhere; comparisons against the barrier and autocall are exact (basis points), never rounded.
 - **One background canvas, driven outside React.** Scroll writes into a shared object; the scene reads it per frame.
-- **Shield look as a pure function of scroll.** No overlapping tweens to fight over the same property.
+- **Main-object look as a pure function of scroll.** No overlapping tweens to fight over the same property.
 - **Content first.** SSR text, no hidden-by-default copy, 3D mounted after load and idle, static fallbacks.
 - **Mock, but honest.** Every outcome including losses is shown side by side; forbidden claim words are checked in the rendered text; launch gates are listed as requirements, never as progress.
 - **Cyan accent sampled from the model**, serif display for headlines, mono for figures.
@@ -192,9 +194,9 @@ Lighthouse 13.5.0 against a production build on a development machine, Microsoft
 Other measurements:
 
 - **Initial JavaScript (gzip):** landing 246 KB (about 153 KB is the React and Next runtime, 43 KB is GSAP + ScrollTrigger); dashboard 197 KB with no GSAP and no three. The three, r3f and drei chunk (283 KB gzip) is loaded lazily after the page is interactive.
-- **Transferred on the landing:** 2.1 MB, of which 1.5 MB is the shield model (fetched at low priority, in parallel).
+- **Transferred on the landing:** about 1.8 MB, of which 1.3 MB is the monument model (fetched at low priority, in parallel).
 - **Frame rate:** about 4 fps in this software-rendering setup, which is why the adaptive give-up exists; a real GPU renders 85k triangles at 60 fps with large headroom. Not measured on a physical device.
-- **Weak-device fallbacks** (2 cores, Save-Data, no WebGL API) were verified to render no canvas, keep all text and show the static shield, with no errors.
+- **Weak-device fallbacks** (2 cores, Save-Data, no WebGL API) were verified to render no canvas, keep all text and show the static fallback, with no errors.
 
 Accessibility: skip link, landmarks, labelled controls and live regions, keyboard-operable tabs and sliders, visible focus ring, contrast of at least 4.5:1 for text, reduced-motion support, charts with a table alternative.
 

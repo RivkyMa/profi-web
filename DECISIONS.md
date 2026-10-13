@@ -211,3 +211,22 @@ A 160 px card slot made a detailed, neon-lit model look like a thumbnail, and th
 
 ### D-044 `?3d=on` override
 Weak-device detection is heuristic and can be wrong, and software rendering (a graphics-blocklisted laptop, a remote desktop) is indistinguishable from a slow GPU until frames are measured. `?3d=on` lifts the static downgrade and disables the FPS give-up for that page load, so a reviewer can always see the scene.
+
+## Model revision (monument and exchange building)
+
+### D-045 Revised models: the coin monument replaces the shield, the exchange building replaces the vault
+Requested revision. `bitcoin_monument_.glb` is now the landing page's main object and `exchange_building.glb` is the object of the Vaults section and the Vaults page header; a light monument is the empty-portfolio accent. The user chose this mapping (the monument's footprint is almost the shield's; the building is thin and its section shows it from the front).
+- Optimized with the existing pipeline, ratios chosen to keep the previous triangle budget: `monument.glb` 30.9 MB to 1.31 MB (ratio 0.28, 2048 px, 84k triangles), `exchange.glb` 32.3 MB to 0.82 MB (ratio 0.21, 1024 px, 83k), `monument-mini.glb` 0.33 MB (ratio 0.10, 512 px, 30k). `npm run assets:optimize` now rebuilds all three.
+- The old `shield.glb`, `vault.glb` and `shield-mini.glb` are removed from `public/models/` (raw sources stay in `assets-src/`; git history has the optimized files).
+- Manifest keys are `monument`, `exchange`, `monumentMini`. Component and state names are unchanged on purpose to keep the diff small: "shield" (`ShieldModel`, `ShieldRig`, `ShieldChoreography`, `ShieldFallback`, `sceneState.pose`) means the main-object slot and "vault" (`VaultRig`, `sceneState.vault`) the second-object slot.
+- All placeholders are the generic one; the procedural shield silhouette had no user left and was removed.
+
+### D-046 Palette unchanged after re-sampling the new textures
+The accent was to be re-derived from the new models (as in D-016). Sampling the saturated texels of the base-colour textures gave cyan `#53dae3` / `#4ce7e2`, magenta `#d66bed` and violet `#975fc3` for the monument and cyan `#74e3df` over steel blue `#529daa` for the building: the same hues as the shield (`#37c7d7`, `#c82edf`, `#802ecc`), only lighter and far sparser (3% and 0.7% of the texture against 11%). The existing `pulse` (`#35d8cf`, light `#72eee4`) and `violet` (`#a43bd0`, light `#d36bf0`) tokens already sit on those hues, so no token changed; gain / loss / steel keep their distance. The logo (`icon.svg`, Open Graph image) keeps the shield mark: it is the brand, not a render of the model.
+
+### D-047 Choreography and lighting for thin, one-faced models
+Both new models are thin (depth about a third of the width) and the coin shows its symbol mirrored from behind, so nothing turns all the way round any more.
+- Landing stops: rotY stays within about +-0.6 rad (the shield used to make a full turn by the last section). The monument sits level with the two cards in "idea" instead of over the intro copy, clears the fixed header in "cta", and on phones sits above the hero headline at 0.7 opacity. The building is narrower than the vault was, so its scale went from 0.72 to 0.85.
+- The dashboard accents sway about +-35 degrees instead of running a turntable.
+- The coin face is a near mirror facing the camera and rendered almost black; a soft front `Lightformer` gives it something to reflect. Still no HDR and no postprocessing (D-018).
+- The static fallback SVG is redrawn as the monument (coin on a plinth) and sized like the hero pose (400 px wide screens, at most 170 px on phones).

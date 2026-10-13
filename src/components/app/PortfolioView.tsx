@@ -92,7 +92,7 @@ export function PortfolioView() {
     return (
       <Card padding="lg" className="flex flex-col items-center gap-6 py-14 text-center">
         <ModelMedia
-          assetId="shieldMini"
+          assetId="monumentMini"
           className="h-40 w-40"
           fallback={
             <div className="flex h-full items-center justify-center">

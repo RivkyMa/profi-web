@@ -4,8 +4,8 @@
  * PROFI design tokens (dark, premium fintech).
  * Tone follows the reference (near-black grounds, warm ink, one luminous accent,
  * serif display + clean sans + mono for figures). The accent is derived from
- * the shield model itself: neon cyan, with violet/magenta as the secondary.
- * See DECISIONS.md D-006 / D-016.
+ * the 3D models themselves: neon cyan, with violet/magenta as the secondary.
+ * See DECISIONS.md D-006 / D-016, re-checked against the revised models in D-046.
  */
 
 :root {

@@ -13,14 +13,18 @@ interface MiniModelCanvasProps {
   onReady: () => void;
 }
 
-/** Slow turntable with a gentle pointer tilt. Runs in useFrame only. */
+/**
+ * Slow sway with a gentle pointer tilt. Runs in useFrame only. The models are
+ * thin with one readable face, so they swing about +-35 degrees instead of
+ * turning all the way round (edge-on they nearly disappear).
+ */
 function Turntable({ children }: { children: ReactNode }) {
   const group = useRef<THREE.Group>(null);
 
   useFrame((state, delta) => {
     const g = group.current;
     if (!g) return;
-    g.rotation.y += delta * 0.45;
+    g.rotation.y = Math.sin(state.clock.elapsedTime * 0.5) * 0.6;
     g.rotation.x = THREE.MathUtils.damp(
       g.rotation.x,
       -state.pointer.y * 0.25,

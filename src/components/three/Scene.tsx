@@ -62,7 +62,7 @@ function VaultRig({ animate }: { animate: boolean }) {
 
   return (
     <group ref={group} scale={0.0001} visible={false}>
-      {active && <ShieldModel assetId="vault" onLoaded={noop} />}
+      {active && <ShieldModel assetId="exchange" onLoaded={noop} />}
     </group>
   );
 }

@@ -33,6 +33,16 @@ export function StudioEnvironment() {
         scale={5}
         target={[0, 0, 0]}
       />
+      {/* Soft front fill: the monument's coin face is a near mirror that
+          looks straight back at the camera, so it needs something to reflect. */}
+      <Lightformer
+        form="rect"
+        intensity={0.9}
+        color="#cfe6f2"
+        position={[0, 1.5, 7]}
+        scale={[9, 5, 1]}
+        target={[0, 0, 0]}
+      />
       <Lightformer
         form="rect"
         intensity={2}

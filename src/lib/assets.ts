@@ -11,7 +11,7 @@ import { preload } from "react-dom";
 
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
 
-export type PlaceholderKind = "shield" | "generic";
+export type PlaceholderKind = "generic";
 
 export interface ModelAsset {
   /** Public URL of the optimized GLB. */
@@ -25,27 +25,29 @@ export interface ModelAsset {
 }
 
 export const assets = {
-  shield: {
-    url: `${basePath}/models/shield.glb`,
+  // The landing page's main object (the "shield" slot of the scene).
+  monument: {
+    url: `${basePath}/models/monument.glb`,
     height: 2.5,
     preload: true,
-    placeholder: "shield",
+    placeholder: "generic",
   },
-  vault: {
-    url: `${basePath}/models/vault.glb`,
+  // The second object (the "vault" slot of the scene) and the Vaults header.
+  exchange: {
+    url: `${basePath}/models/exchange.glb`,
     height: 2.5,
-    // Shown in a small canvas lower on the page; fetch it only when needed.
+    // Shown lower on the page and in a small canvas; fetch it only when needed.
     preload: false,
     placeholder: "generic",
   },
-  // Light variant (512 px textures, ~32k triangles) for small UI accents. The
-  // full shield's 2048 px textures cost ~90 MB of VRAM, too much for a
+  // Light variant (512 px textures, ~30k triangles) for small UI accents. The
+  // full monument's 2048 px textures cost ~90 MB of VRAM, too much for a
   // header-sized canvas.
-  shieldMini: {
-    url: `${basePath}/models/shield-mini.glb`,
+  monumentMini: {
+    url: `${basePath}/models/monument-mini.glb`,
     height: 2.5,
     preload: false,
-    placeholder: "shield",
+    placeholder: "generic",
   },
   // TODO(assets): register new models here (coin, ...). Until their GLB
   // exists they render as the "generic" placeholder.

@@ -12,7 +12,7 @@ export function VaultsHeader() {
       description="A vault spreads stablecoin across approved markets, per epoch. Withdrawals open after those markets settle, and downside tokens are shared in kind."
       media={
         <ModelMedia
-          assetId="vault"
+          assetId="exchange"
           className="h-36 w-44"
           fallback={<div className="h-full w-full rounded-xl border border-hair-2 bg-ground-1" />}
         />
