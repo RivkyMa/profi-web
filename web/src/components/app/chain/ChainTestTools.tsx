@@ -29,7 +29,8 @@ export function ChainTestTools() {
   const [price, setPrice] = useState(100);
   const [busy, setBusy] = useState<string | null>(null);
 
-  if (!chain || chainSetup.mode !== "chain" || !adapter) return null;
+  // Nothing to do on a chain that cannot be read; the status notice explains why.
+  if (!chain || chain.status === "error" || chainSetup.mode !== "chain" || !adapter) return null;
 
   const run = async (key: string, action: () => Promise<unknown>) => {
     setBusy(key);

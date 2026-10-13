@@ -35,6 +35,8 @@ import {
   marketFactoryAbi,
   oracleAbi,
 } from "@profi/shared";
+import { payoutFor } from "../../web/src/lib/chain/settlement";
+import type { ChainMarketData } from "../../web/src/lib/chain/model";
 import { connect } from "../src/chain";
 import { parseConfig } from "../src/config";
 import { tick, type Logger, type TickReport } from "../src/tick";
@@ -224,6 +226,21 @@ const dark = await createMarket({ underlying: aapl.token, lotTokens: 100n * E6, 
 const empty = await createMarket({ underlying: tsla.token, lotTokens: 1n * E6, subscribeSeconds: 3 * DAY });
 
 await subscribeBothSides(vector, tsla.token);
+
+// Three Earn lots (from two accounts) against two Protect lots: two matched, one
+// refunded. Used to check the dashboard's settlement math against the contract.
+const partial = await createMarket({ underlying: tsla.token, lotTokens: 100n * E6, subscribeSeconds: DAY });
+{
+  const reserve = await client.readContract({ address: partial, abi: marketEscrowAbi, functionName: "lotReserve" });
+  const principal = await client.readContract({ address: partial, abi: marketEscrowAbi, functionName: "lotPrincipal" });
+  await fund(earner, manifest.stable, partial, 2n * principal);
+  await send(earner, partial, marketEscrowAbi, "subscribeEarn", [2n]);
+  await fund(depositor, manifest.stable, partial, principal);
+  await send(depositor, partial, marketEscrowAbi, "subscribeEarn", [1n]);
+  await fund(protector, manifest.stable, partial, 2n * reserve);
+  await fund(protector, tsla.token, partial, 2n * 100n * E6);
+  await send(protector, partial, marketEscrowAbi, "subscribeProtect", [2n]);
+}
 await subscribeBothSides(dark, aapl.token);
 
 const depositCloses = BigInt((await now()) + DAY);
@@ -260,7 +277,8 @@ equal(locked.state, EpochState.Locked, "epoch is locked");
 equal(locked.spent, 700n * E6, "epoch spent 7 lots of 100 (the rest stays as cash)");
 
 console.log("\n3. Observation 1 at 94: two keepers race, exactly one records it");
-await warpTo(Number(await timeOf(vector, 0n)));
+// Markets created a few seconds apart open their windows a few seconds apart: wait for the later one.
+await warpTo(Math.max(Number(await timeOf(vector, 0n)), Number(await timeOf(partial, 0n))));
 await setPrice(tsla.oracle, 94n * E6);
 // A second keeper, with its own account, working from the same chain state.
 const rival = await connect({ ...config, account: (await wallet.getAddresses())[4] as Address });
@@ -273,7 +291,7 @@ equal(
 );
 
 console.log("\n4. Observation 2 at 103: autocall closes the market, fees are collected");
-await warpTo(Number(await timeOf(vector, 1n)));
+await warpTo(Math.max(Number(await timeOf(vector, 1n)), Number(await timeOf(partial, 1n))));
 await setPrice(tsla.oracle, 103n * E6);
 await untilQuiet();
 equal(await phaseOf(vector), Phase.Closed, "vector market is closed");
@@ -289,6 +307,37 @@ equal(
   5n * E6,
   "the keeper collected the 5 protocol fee (2 coupons x 2.5)",
 );
+
+console.log("\n   The dashboard's settlement math equals the contract's claimable() on a partial match");
+equal(await phaseOf(partial), Phase.Closed, "partially matched market is closed");
+const read = <F extends "totalEarnLots" | "totalProtectLots" | "matchedLots" | "earnCash" | "earnTokens" | "protectCash" | "protectTokens" | "lotPrincipal" | "lotReserve" | "lotTokens">(fn: F) =>
+  client.readContract({ address: partial, abi: marketEscrowAbi, functionName: fn });
+const data = {
+  phase: await phaseOf(partial),
+  totalEarnLots: await read("totalEarnLots"),
+  totalProtectLots: await read("totalProtectLots"),
+  matchedLots: await read("matchedLots"),
+  lotPrincipal: await read("lotPrincipal"),
+  lotReserve: await read("lotReserve"),
+  lotTokens: await read("lotTokens"),
+  pools: {
+    earnCash: await read("earnCash"),
+    earnTokens: await read("earnTokens"),
+    protectCash: await read("protectCash"),
+    protectTokens: await read("protectTokens"),
+  },
+} as ChainMarketData;
+equal(data.matchedLots, 2n, "two lots were matched");
+for (const [who, side, lots, name] of [
+  [earner, "earn", 2n, "Earn account (2 lots)"],
+  [depositor, "earn", 1n, "Earn account (1 lot)"],
+  [protector, "protect", 2n, "Protect account"],
+] as const) {
+  const [chainStable, chainTokens] = await claimableOf(partial, who);
+  const mine = payoutFor(side, lots, data)!;
+  equal(mine.cash, chainStable, `${name}: cash matches claimable()`);
+  equal(mine.tokens, chainTokens, `${name}: tokens match claimable()`);
+}
 
 console.log("\n5. The dark market never gets oracle data: the keeper unwinds it");
 equal(await phaseOf(dark), Phase.Closed, "dark market is closed");
@@ -314,10 +363,20 @@ await send(depositor, manifest.vault, epochVaultAbi, "redeem", [epochId]);
 equal((await balanceOf(manifest.stable, depositor)) - before, 1_000n * E6, "depositor redeemed 1000");
 
 console.log("\n7. Users claim what the contracts said they were owed");
+const earnerBefore = await balanceOf(manifest.stable, earner);
+const tokensBefore = await balanceOf(tsla.token, protector);
 await send(earner, vector, marketEscrowAbi, "claim");
 await send(protector, vector, marketEscrowAbi, "claim");
-equal(await balanceOf(manifest.stable, earner), 10_095n * E6, "Earn holds 10095 from the vector market");
-equal(await balanceOf(tsla.token, protector), 100n * E6, "Protect holds its 100 tokens");
+equal(
+  (await balanceOf(manifest.stable, earner)) - earnerBefore,
+  10_095n * E6,
+  "Earn received 10095 from the vector market",
+);
+equal(
+  (await balanceOf(tsla.token, protector)) - tokensBefore,
+  100n * E6,
+  "Protect received its 100 tokens",
+);
 
 console.log("\n8. Idempotency: the keeper has nothing left to do");
 const quiet = [await pass(), await pass()];

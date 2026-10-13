@@ -2,9 +2,9 @@
 
 Solidity `0.8.24`, Foundry, OpenZeppelin 5 (`SafeERC20`, `ReentrancyGuard`, `Ownable`).
 
-> **Testnet / mock only.** These contracts are not audited, not deployed anywhere,
-> and not connected to the web app yet (that is Phase 7). The mock tokens and
-> oracle in `src/mocks/` have open mint / open submit on purpose.
+> **Testnet / mock only.** These contracts are not audited. The mock tokens and
+> oracle in `src/mocks/` have open mint / open submit on purpose. The dashboard
+> and the keeper can run against them on a local or test chain (see below).
 
 ## What is here
 
@@ -93,6 +93,28 @@ To regenerate the shared fixture after an intentional model change:
 UPDATE_VECTORS=1 npm test          # rewrites packages/shared/test-vectors.json
 cd contracts && forge test         # the contracts must still match
 ```
+
+## Deploying
+
+`script/Deploy.s.sol` deploys the whole stack with **mock** tokens and **mock**
+oracles, optionally seeds three markets and one vault epoch, and writes
+`../deployments/<chainId>.json` (only on a real broadcast).
+
+```bash
+# local chain, no key needed (anvil signs for an unlocked account)
+anvil &
+npm run deploy:anvil          # from the repository root: deploy + write web/.env.local, keeper/.env
+
+# a test network: RPC_URL and PRIVATE_KEY come from contracts/.env (see .env.example)
+npm run deploy:testnet
+RPC_URL=<same url> npm run env:sync -- <chainId>
+```
+
+The chain id is read from the node, and the registry's owner, the fee recipient
+and the vault manager default to the broadcaster (`REGISTRY_OWNER`,
+`FEE_RECIPIENT`, `VAULT_MANAGER` override; ownership is handed over after
+setup). After a contract change, `npm run abi:export` regenerates the ABIs the
+web app and keeper use.
 
 ## Known limits
 

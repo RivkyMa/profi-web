@@ -285,3 +285,41 @@ Shares are 1:1 with stable deposited and are a mapping, not a token (non-transfe
 
 ### D-056 Known gaps, stated rather than hidden
 Single-value oracle interface (a feed that overwrites its price before `observe` can cost an observation); strike taken at creation not activation; no deployment scripts yet; not audited. The invariant suite is meaningful but bounded: it reaches Closed, claims and unmatched refunds only because the handler has a `progress` action; coverage is printed by `afterInvariant` (`-vv`).
+
+## Phase 7: Integration
+
+### D-057 One store, two sources
+The dashboard components were written against the zustand store and `MockMarket`. Rather than fork every page, the store keeps its shape and gains an `adapter`: in chain mode a bridge replaces markets / positions / epochs / balances with what it reads, and each action delegates to the adapter (real transactions) instead of the simulation. `MockMarket` keeps its name (renaming would be a large, noisy diff) and gains an optional `chain` payload; the new statuses `awaiting` (subscription over, not activated) and `cancelled` (nothing matched) exist only on chain.
+
+### D-058 Mock is the default; chain mode is opt-in and env-only
+`NEXT_PUBLIC_DATA_MODE=chain` plus complete `NEXT_PUBLIC_*` enables it. Missing or malformed values keep mock mode and the dashboard lists the problems instead of failing silently. Nothing about a network is hard-coded, as the working agreement requires. GitHub Pages stays mock. If a chain cannot be read, the page says so and offers the mock data in one click (the "mock demo as fallback").
+
+### D-059 wagmi 2, not 3
+RainbowKit 2.2.11 declares `wagmi ^2.9`; wagmi 3 is the latest release but is not supported by it. wagmi 2.19 + viem 2 are used and the dependency tree is installed without `--legacy-peer-deps`. `npm audit` reports advisories in transitive wallet dependencies (WalletConnect and friends); `audit fix --force` was not run because it proposes breaking changes to the wallet stack.
+
+### D-060 Wallet code is loaded only when needed
+`lazy.tsx` reads `process.env.NEXT_PUBLIC_DATA_MODE` directly so the bundler can drop the `next/dynamic` imports in mock builds. The static export was grepped for rainbowkit, wagmi, walletconnect and ABI strings: none. Providers wrap the whole dashboard shell in chain mode (the header's connect button needs them), so in chain mode the shell appears after the lazy chunk loads.
+
+### D-061 Local dev accounts without a key
+On chain 31337 only, the connect dialog offers three "Local account" wallets built from wagmi's `mock` connector and the well-known public anvil addresses. They hold no key: the local node signs for unlocked accounts. This makes the full journey playable (and scriptable in a browser) without an extension, and nothing secret is in the repo. They are never offered on another chain.
+
+### D-062 Deploy: mocks always, manifest only on a real broadcast
+`Deploy.s.sol` deploys mock USD, mock underlyings and mock oracles on any chain (this is a mock/testnet project), seeds three markets and an epoch unless `SEED_DEMO=false`, and hands registry ownership to `REGISTRY_OWNER`. `deployments/<chainId>.json` is written only under `ScriptBroadcast`, so a dry run cannot leave addresses that do not exist. The chain id comes from the node. `RPC_URL` and `PRIVATE_KEY` come from the environment (`rpc_endpoints.testnet` in foundry.toml); anvil uses `--unlocked --sender <public address>`, so no key is committed. Anvil's deterministic addresses keep `web/.env.local` valid across a fresh deploy.
+
+### D-063 Env blocks are generated, never secrets
+`scripts/sync-env.mjs` rewrites only a marked block in `web/.env.local` and `keeper/.env`. The keeper key is never written by a script. For a non-local chain `RPC_URL` must be supplied; it is not guessed.
+
+### D-064 The keeper is stateless and treats lost races as skips
+No local state: every pass re-reads the chain and plans from it. Every call is simulated first; a revert that only means "not yet" or "already done" is a skip. If a transaction reverts after a successful simulation, the keeper re-simulates and, when the call is now impossible for a benign reason, records `raced`; any other revert stays a failure. A nonce conflict is a skip retried next pass. The e2e script found both gaps (a lost race and a same-account nonce collision were reported as failures) before they shipped. An account is never assumed outside chain 31337.
+
+### D-065 One planner for the keeper and the buttons
+`planMarket` / `planEpoch` live in `@profi/shared/lifecycle`. The keeper acts on them and the dashboard offers the same step as a button, so what the UI says is possible and what the keeper does cannot drift. The contract still re-checks everything.
+
+### D-066 Settlement math is duplicated on purpose, and checked
+The dashboard shows owed and received amounts from the market's pools (`lib/chain/settlement.ts`, the escrow's floor division). It is tested against all 18 shared vectors, a hand-computed multi-holder case, and (in `keeper/scripts/e2e.ts`) against the contract's own `claimable()` on a partially matched market. Unclaimed amounts could have used `claimable()` directly; computing from pools also yields the received amounts for claimed positions without scanning `Claimed` events.
+
+### D-067 Exact time stays in unix seconds
+A first version derived epoch deadlines from the minute-precision ISO strings used for display; the browser journey caught the lock button (and "skip to next event") landing up to 59 s early. Decisions use unix seconds carried alongside the display strings, with a regression test.
+
+### D-068 Known gaps
+Only anvil has been exercised; no public testnet RPC was available, so `deploy:testnet` and the non-local path of `env:sync` are untested. The dashboard scans events from `NEXT_PUBLIC_START_BLOCK` on every refresh (no indexer, no cache beyond immutable market terms), which is fine for a test deployment and not for a busy chain. Studio markets accept deposits for a fixed 3 days. The mock oracle's open submission is exposed in the UI as a test tool, clearly labelled.

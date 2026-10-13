@@ -1,6 +1,6 @@
 # PROFI
 
-A scroll-driven 3D landing page and a mock dashboard for **PROFI**, a structured-finance platform on Robinhood Chain.
+A scroll-driven 3D landing page and a dashboard for **PROFI**, a structured-finance platform on Robinhood Chain. The dashboard runs on mock data by default, and against the contracts on a local or test chain when you ask for it.
 
 - **Protect**: asset owners deposit the underlying token plus a premium reserve and receive conditional settlement at the starting strike.
 - **Earn**: stablecoin holders receive conditional premium and carry the risk of receiving the underlying token instead of their stablecoin.
@@ -9,9 +9,9 @@ A scroll-driven 3D landing page and a mock dashboard for **PROFI**, a structured
 
 Every obligation is funded in full by the market's own escrow. There is no lending, no leverage and no rehypothecation. "Fully funded" means contractual funding, not freedom from risk.
 
-This repository is a monorepo: the web app (`web/`), the Solidity contracts (`contracts/`), a keeper placeholder (`keeper/`) and shared fixtures (`packages/shared/`).
+This repository is a monorepo: the web app (`web/`), the Solidity contracts (`contracts/`), a keeper (`keeper/`) and shared ABIs and fixtures (`packages/shared/`).
 
-> **Testnet / Mock data.** This is a visual trial project. The web app runs on fake data held in memory: it has no wallet integration and no indexer, and it is not connected to the contracts in `contracts/` (that is a later phase). The contracts are not deployed or audited. Nothing here is live, and it is not an offer or solicitation to buy or sell any security. You can lose some or all of any funds you commit to a real product like this.
+> **Testnet / Mock data.** This is a visual trial project. By default the web app runs on fake data held in memory. In chain mode it talks to the contracts in `contracts/` on a local or test network with mock tokens and a mock oracle, through a wallet. Nothing is audited or live, no real funds are involved, and it is not an offer or solicitation to buy or sell any security. You can lose some or all of any funds you commit to a real product like this.
 
 ## Run it
 
@@ -34,6 +34,49 @@ Production build:
 npm run build
 npm start
 ```
+
+### Run it against a local chain
+
+The whole journey (subscribe, activate, observe, settle, claim, vault epochs)
+runs on a local [anvil](https://getfoundry.sh) node through the dashboard.
+
+```bash
+npm run chain:anvil     # terminal 1: a local chain (31337)
+npm run deploy:anvil    # terminal 2: mock tokens, oracles, registry, factory, vault, demo markets
+                        #   -> writes deployments/31337.json, web/.env.local and keeper/.env
+npm run dev             # terminal 3: the dashboard, now in chain mode
+npm run keeper          # terminal 4, optional: does the permissionless steps automatically
+```
+
+- **Wallet.** Connect with a browser wallet pointed at the local chain, or choose
+  one of the **Local account A / B / C** entries in the connect dialog. Those
+  are the public anvil dev addresses, offered only on chain 31337, so a whole
+  Earn / Protect / vault journey needs no extension.
+- **Test tools** (collapsed at the top of every page): mint mock mUSD and
+  tokens, publish a mock oracle price, and on the local chain skip the clock to
+  the next event. Without the keeper, the same steps are buttons in each
+  market's **Market steps** and each epoch's card.
+- **Back to the mock demo.** Remove the generated block from `web/.env.local`, or
+  run `NEXT_PUBLIC_DATA_MODE=mock npm run dev`. If the chain cannot be read, the
+  page says so and offers the mock data in one click.
+- A fresh `anvil` always deploys to the same addresses, so a restart plus
+  `npm run deploy:anvil` keeps `.env.local` valid.
+
+### Run it against a test network
+
+Nothing about the network is hard-coded: supply the RPC URL yourself.
+
+```bash
+cp contracts/.env.example contracts/.env    # RPC_URL and PRIVATE_KEY (never commit it)
+npm run deploy:testnet                       # forge script ... --rpc-url testnet --broadcast
+RPC_URL=<same url> NEXT_PUBLIC_CHAIN_NAME=<name> npm run env:sync -- <chainId>   # e.g. 46630
+```
+
+Then set `KEEPER_PRIVATE_KEY` in `keeper/.env` and start `npm run keeper`. The
+deploy script deploys **mock** tokens and **mock** oracles with open minting and
+open price submission, by design: use it on test networks only. This path was
+written against the local chain; the project has not been run on a public
+testnet yet.
 
 ## GitHub Pages preview
 
@@ -60,6 +103,13 @@ Normal local development still runs at `http://localhost:3000`.
 | `npm test` | Web: Vitest (payoff model, shared vectors, formatting, valuation, mock domain, store) |
 | `npm run test:contracts` | Contracts: `forge test` (vectors, unit, fuzz, invariants) |
 | `npm run build:contracts` | Contracts: `forge build` |
+| `npm run test:keeper` | Keeper: planner and config unit tests |
+| `npm run abi:export` / `npm run abi:check` | Regenerate / verify `packages/shared/src/abis.ts` from the contracts |
+| `npm run chain:anvil` | A local chain |
+| `npm run deploy:anvil` / `npm run deploy:testnet` | Deploy the mock stack (testnet reads `RPC_URL` and `PRIVATE_KEY` from `contracts/.env`) |
+| `npm run env:sync -- <chainId>` | Write the web and keeper env blocks from `deployments/<chainId>.json` |
+| `npm run keeper` / `npm run keeper:once` | Run the keeper (loop / one pass) |
+| `npm run e2e:anvil` | Play whole markets through the keeper on a local chain (needs anvil and a deploy) |
 | `npm run assets:optimize` | Web: raw GLBs in `web/assets-src/` to optimized `web/public/models/` |
 
 Optional environment variables are listed in `web/.env.example` (site URL for metadata, whitepaper link). Nothing is required to run the demo, and no RPC URL, address or chain id is ever hard-coded.
@@ -73,7 +123,10 @@ Next.js 16 (App Router, Turbopack), React 19, TypeScript (strict), Tailwind CSS 
 | Area | Where | Notes |
 | --- | --- | --- |
 | Landing page | `web/src/app/(landing)` | Hero, core idea (pinned), how a market works (pinned, 5 stages), four products, payoff explorer, risks, launch gates, footer |
-| Mock dashboard | `web/src/app/app` | Earn, Protect, Vaults, Studio, Portfolio; simulated transactions |
+| Dashboard | `web/src/app/app` | Earn, Protect, Vaults, Studio, Portfolio; simulated transactions (mock) or real ones (chain mode) |
+| Chain layer | `web/src/lib/chain`, `web/src/components/app/chain` | Env-only config, event reads, mapping, settlement math, transactions; wagmi + RainbowKit loaded only in chain mode |
+| Keeper | `keeper/` | Stateless viem process: activate, observe, unwind, collect fees, lock, settle |
+| Shared | `packages/shared` | Generated ABIs, enum constants, the lifecycle planner, test vectors |
 | Payoff model | `web/src/lib/payoff.ts` | Pure, integer-only; the source of truth for every number on screen |
 | 3D scene | `web/src/components/three` | One fixed canvas behind the landing; small lazy canvases for accents |
 | Design system | `web/src/components/ui` | Button, Card, Badge, Tabs, Tooltip, Section, form controls, payoff chart and outcome cards |
@@ -143,11 +196,11 @@ Also covered: equality at the barrier and at the autocall level, a missed observ
 - **`EpochVault`**: epoch shares (non-transferable) over factory markets; downside tokens are shared pro rata in kind.
 - **Tests (`forge test`, 60):** the 18 shared vectors match the TypeScript model exactly; unit tests; fuzz against an independent reference model; handler-driven invariants (escrow always covers its obligations, one observation once in order, history append-only, terms never change, no admin path).
 
-They are not deployed, not audited, and not wired to the web app yet.
+`contracts/script/Deploy.s.sol` deploys the whole stack with mock tokens and oracles (anvil or any network, RPC and key from the environment) and records `deployments/<chainId>.json`. The dashboard and the [keeper](./keeper/README.md) read the deployment from environment variables written by `scripts/sync-env.mjs`. The contracts are not audited.
 
 ## Mock dashboard
 
-Everything under `/app` is mock data in memory. Reloading resets it ("Reset demo data" in the sidebar does too).
+By default everything under `/app` is mock data in memory. Reloading resets it ("Reset demo data" in the sidebar does too). In chain mode the same pages read and write the contracts: markets are discovered from the factory's `MarketCreated` events, the observation history from `Observed` events, and positions, pools and epochs from view calls. Amounts owed are computed from the market's pools with the escrow's own floor division, and a script in `keeper/` checks that against the contract's `claimable()`.
 
 | Page | What you can do |
 | --- | --- |
@@ -226,16 +279,17 @@ What is still open: landing TBT is dominated by hydrating the whole page tree pl
 
 ## Limitations
 
-- **The web app is mock data.** It does not talk to the contracts, an oracle or a wallet; the numbers come from the payoff model applied to invented markets.
-- **The contracts are untested outside Foundry.** No deployment, no real oracle adapter, no keeper or indexer, no audit.
-- State is in memory and resets on reload.
+- **Mock mode is mock data.** The default demo and the GitHub Pages build apply the payoff model to invented markets, with state in memory that resets on reload.
+- **Chain mode runs mock tokens and a mock oracle** (open minting, open price submission). There is no production oracle adapter, no indexer (the dashboard scans events from `NEXT_PUBLIC_START_BLOCK`) and no audit.
+- **Only the local chain has been exercised.** The deploy and env scripts are written for a test network, but no public testnet has been used in this repository.
+- The vault redeems in kind only; the mock demo's "redeem in cash" has no on-chain counterpart.
 - Ticker symbols are labels for mock tokens, not real instruments.
 - Not audited, not live, not production-ready, and not an offer of any security.
 - Performance was measured with software rendering only (see above).
 
 ## Next steps
 
-1. **Integration (Phase 7):** deploy scripts (anvil and the testnet via env), an idempotent keeper (Node + viem), wallet integration, reading markets from contract events, keeping the mock mode as the demo fallback.
+1. **A public testnet run:** deploy with the scripts above, keep the keeper running, and record what differs from anvil (block times, RPC log-range limits, the native token).
 2. **Real oracle:** a production adapter with a historical lookup, staleness limits and the missed-observation deadline policy, reviewed before any use.
 3. **Eligibility and legal review:** who can use each product and where.
 4. **Independent audit** and a public testnet period with an incident process.
