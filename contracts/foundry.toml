@@ -34,3 +34,8 @@ fail_on_revert = false
 [fmt]
 line_length = 100
 tab_width = 4
+
+[lint]
+# A time-based product compares block.timestamp by design; windows are minutes
+# to days wide, far above validator skew.
+exclude_lints = ["block-timestamp"]
