@@ -4,7 +4,9 @@ on:
   pull_request:
     paths:
       - "contracts/**"
+      - "keeper/**"
       - "packages/shared/**"
+      - "scripts/**"
       - "web/src/lib/payoff*.ts"
       - "web/src/lib/units.ts"
       - ".github/workflows/contracts.yml"
@@ -12,7 +14,9 @@ on:
     branches: [main]
     paths:
       - "contracts/**"
+      - "keeper/**"
       - "packages/shared/**"
+      - "scripts/**"
       - "web/src/lib/payoff*.ts"
       - "web/src/lib/units.ts"
       - ".github/workflows/contracts.yml"
@@ -40,3 +44,35 @@ jobs:
         run: forge build --root contracts
       - name: Test contracts (vectors, unit, fuzz, invariants)
         run: forge test --root contracts -vv
+      - name: Generated ABIs match the contracts
+        run: npm run abi:check
+      - name: Keeper unit tests and types
+        run: |
+          npm test -w keeper
+          npm run typecheck -w keeper
+
+  e2e:
+    name: Keeper end to end (anvil)
+    runs-on: ubuntu-latest
+    needs: forge
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - uses: foundry-rs/foundry-toolchain@v1
+      - name: Start a local chain
+        run: |
+          anvil --silent &
+          for i in $(seq 1 30); do
+            curl -s -X POST -H 'content-type: application/json' \
+              --data '{"jsonrpc":"2.0","id":1,"method":"eth_chainId","params":[]}' \
+              http://127.0.0.1:8545 >/dev/null && break
+            sleep 1
+          done
+      - name: Deploy the mock stack
+        run: npm run deploy:anvil
+      - name: Play the lifecycle through the keeper
+        run: npm run e2e:anvil
