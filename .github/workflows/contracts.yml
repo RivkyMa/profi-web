@@ -1,0 +1,42 @@
+name: Contracts
+
+on:
+  pull_request:
+    paths:
+      - "contracts/**"
+      - "packages/shared/**"
+      - "web/src/lib/payoff*.ts"
+      - "web/src/lib/units.ts"
+      - ".github/workflows/contracts.yml"
+  push:
+    branches: [main]
+    paths:
+      - "contracts/**"
+      - "packages/shared/**"
+      - "web/src/lib/payoff*.ts"
+      - "web/src/lib/units.ts"
+      - ".github/workflows/contracts.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  forge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install dependencies (OpenZeppelin and forge-std come from npm)
+        run: npm ci
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+      - name: TypeScript model still matches the shared vectors
+        run: npm test
+      - name: Build contracts
+        run: forge build --root contracts
+      - name: Test contracts (vectors, unit, fuzz, invariants)
+        run: forge test --root contracts -vv

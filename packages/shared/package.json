@@ -1,0 +1,10 @@
+{
+  "name": "@profi/shared",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Cross-language fixtures shared by the TypeScript payoff model and the Solidity contracts.",
+  "type": "module",
+  "exports": {
+    "./test-vectors.json": "./test-vectors.json"
+  }
+}

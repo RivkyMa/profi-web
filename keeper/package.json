@@ -1,0 +1,6 @@
+{
+  "name": "@profi/keeper",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Observation and unwind keeper. Implemented in Phase 7."
+}

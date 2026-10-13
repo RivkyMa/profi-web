@@ -1,0 +1,36 @@
+[profile.default]
+src = "src"
+test = "test"
+script = "script"
+out = "out"
+cache_path = "cache"
+libs = []
+
+solc_version = "0.8.24"
+evm_version = "cancun"
+optimizer = true
+optimizer_runs = 200
+bytecode_hash = "none"
+
+# Dependencies come from npm (hoisted to the repo root), not git submodules.
+remappings = [
+  "@openzeppelin/contracts/=../node_modules/@openzeppelin/contracts/",
+  "forge-std/=../node_modules/forge-std/src/",
+]
+allow_paths = ["../node_modules", "../packages/shared"]
+
+# Tests read the shared JSON fixtures that the TypeScript model also asserts.
+fs_permissions = [{ access = "read", path = "../packages/shared" }]
+
+[fuzz]
+runs = 512
+seed = "0x70726f6669"
+
+[invariant]
+runs = 64
+depth = 48
+fail_on_revert = false
+
+[fmt]
+line_length = 100
+tab_width = 4

@@ -1,0 +1,48 @@
+{
+  "name": "profi-web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Scroll-driven 3D landing page and mock dashboard for PROFI (testnet / mock data).",
+  "engines": {
+    "node": ">=20.9"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "typecheck": "next typegen && tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest",
+    "assets:optimize": "npm run assets:optimize:monument && npm run assets:optimize:exchange && npm run assets:optimize:monument-mini",
+    "assets:optimize:monument": "node scripts/optimize-model.mjs assets-src/bitcoin_monument_.glb public/models/monument.glb --ratio 0.28 --texture 2048",
+    "assets:optimize:exchange": "node scripts/optimize-model.mjs assets-src/exchange_building.glb public/models/exchange.glb --ratio 0.21 --texture 1024",
+    "assets:optimize:monument-mini": "node scripts/optimize-model.mjs assets-src/bitcoin_monument_.glb public/models/monument-mini.glb --ratio 0.10 --texture 512"
+  },
+  "dependencies": {
+    "@gsap/react": "^2.1.2",
+    "@react-three/drei": "^10.7.9",
+    "@react-three/fiber": "^9.8.1",
+    "gsap": "^3.15.0",
+    "lenis": "^1.3.26",
+    "lucide-react": "^1.55.0",
+    "next": "16.4.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "three": "^0.186.1",
+    "zustand": "^5.0.15"
+  },
+  "devDependencies": {
+    "@gltf-transform/cli": "^4.5.1",
+    "@tailwindcss/turbopack": "^4",
+    "@types/node": "^24.19.2",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@types/three": "^0.186.0",
+    "eslint": "^9",
+    "eslint-config-next": "16.4.0",
+    "tailwindcss": "^4",
+    "typescript": "^5",
+    "vitest": "^5.0.3"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "name": "@profi/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "description": "PROFI structured-note contracts (Foundry). Testnet / mock only, not audited.",
+  "scripts": {
+    "build": "forge build",
+    "test": "forge test",
+    "test:fuzz": "forge test --match-path \"test/*Fuzz*\"",
+    "test:invariant": "forge test --match-path \"test/*Invariant*\"",
+    "fmt": "forge fmt"
+  },
+  "devDependencies": {
+    "@openzeppelin/contracts": "5.6.1",
+    "forge-std": "github:foundry-rs/forge-std#v1.9.7"
+  }
+}
