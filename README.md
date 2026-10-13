@@ -9,15 +9,23 @@ A scroll-driven 3D landing page and a mock dashboard for **PROFI**, a structured
 
 Every obligation is funded in full by the market's own escrow. There is no lending, no leverage and no rehypothecation. "Fully funded" means contractual funding, not freedom from risk.
 
-> **Testnet / Mock data.** This is a visual trial project. There are no contracts, no wallet integration and no indexer; all data is fake and lives in memory. Nothing here is audited or live, and it is not an offer or solicitation to buy or sell any security. You can lose some or all of any funds you commit to a real product like this.
+This repository is a monorepo: the web app (`web/`), the Solidity contracts (`contracts/`), a keeper placeholder (`keeper/`) and shared fixtures (`packages/shared/`).
+
+> **Testnet / Mock data.** This is a visual trial project. The web app runs on fake data held in memory: it has no wallet integration and no indexer, and it is not connected to the contracts in `contracts/` (that is a later phase). The contracts are not deployed or audited. Nothing here is live, and it is not an offer or solicitation to buy or sell any security. You can lose some or all of any funds you commit to a real product like this.
 
 ## Run it
 
-Requires Node.js 20.9 or newer.
+Requires Node.js 20.9 or newer. Run everything from the repository root; the root scripts proxy to the workspaces.
 
 ```bash
 npm install
-npm run dev          # http://localhost:3000
+npm run dev          # web app on http://localhost:3000
+```
+
+The contracts additionally need [Foundry](https://getfoundry.sh) (`forge`):
+
+```bash
+npm run test:contracts   # forge test in contracts/
 ```
 
 Production build:
@@ -39,20 +47,22 @@ the source. The workflow in `.github/workflows/pages.yml` checks the code,
 exports the static frontend and deploys it after pushes to `main`.
 
 The workflow sets `GITHUB_PAGES=true`, the Pages base path and the public site
-URL during the build. This exports `out/`, including an HTML page for each
+URL during the build. This exports `web/out/`, including an HTML page for each
 dashboard route. Navigation and 3D asset URLs include the repository path.
 Normal local development still runs at `http://localhost:3000`.
 
 | Script | What it does |
 | --- | --- |
-| `npm run dev` | Next.js dev server (Turbopack) |
-| `npm run build` / `npm start` | Production build and server |
-| `npm run lint` | ESLint |
-| `npm run typecheck` | `next typegen` then `tsc --noEmit` |
-| `npm test` | Vitest: payoff model, formatting, valuation, mock domain, store |
-| `npm run assets:optimize` | Raw GLB in `assets-src/` to optimized `public/models/` |
+| `npm run dev` | Web: Next.js dev server (Turbopack) |
+| `npm run build` / `npm start` | Web: production build and server |
+| `npm run lint` | Web: ESLint |
+| `npm run typecheck` | Web: `next typegen` then `tsc --noEmit` |
+| `npm test` | Web: Vitest (payoff model, shared vectors, formatting, valuation, mock domain, store) |
+| `npm run test:contracts` | Contracts: `forge test` (vectors, unit, fuzz, invariants) |
+| `npm run build:contracts` | Contracts: `forge build` |
+| `npm run assets:optimize` | Web: raw GLBs in `web/assets-src/` to optimized `web/public/models/` |
 
-Optional environment variables are listed in `.env.example` (site URL for metadata, whitepaper link). Nothing is required to run the demo, and no RPC URL, address or chain id is ever hard-coded.
+Optional environment variables are listed in `web/.env.example` (site URL for metadata, whitepaper link). Nothing is required to run the demo, and no RPC URL, address or chain id is ever hard-coded.
 
 ## Stack
 
@@ -62,30 +72,31 @@ Next.js 16 (App Router, Turbopack), React 19, TypeScript (strict), Tailwind CSS 
 
 | Area | Where | Notes |
 | --- | --- | --- |
-| Landing page | `src/app/(landing)` | Hero, core idea (pinned), how a market works (pinned, 5 stages), four products, payoff explorer, risks, launch gates, footer |
-| Mock dashboard | `src/app/app` | Earn, Protect, Vaults, Studio, Portfolio; simulated transactions |
-| Payoff model | `src/lib/payoff.ts` | Pure, integer-only; the source of truth for every number on screen |
-| 3D scene | `src/components/three` | One fixed canvas behind the landing; small lazy canvases for accents |
-| Design system | `src/components/ui` | Button, Card, Badge, Tabs, Tooltip, Section, form controls, payoff chart and outcome cards |
-| Mock data | `src/lib/mock` | Markets in every status, vault epochs, reference market |
+| Landing page | `web/src/app/(landing)` | Hero, core idea (pinned), how a market works (pinned, 5 stages), four products, payoff explorer, risks, launch gates, footer |
+| Mock dashboard | `web/src/app/app` | Earn, Protect, Vaults, Studio, Portfolio; simulated transactions |
+| Payoff model | `web/src/lib/payoff.ts` | Pure, integer-only; the source of truth for every number on screen |
+| 3D scene | `web/src/components/three` | One fixed canvas behind the landing; small lazy canvases for accents |
+| Design system | `web/src/components/ui` | Button, Card, Badge, Tabs, Tooltip, Section, form controls, payoff chart and outcome cards |
+| Mock data | `web/src/lib/mock` | Markets in every status, vault epochs, reference market |
 
 ```
-src/
-  app/            routes: (landing)/ , app/ (dashboard), icon, OG image, robots, sitemap, 404
-  components/
-    three/        canvas, scene, model loading, fallbacks
-    landing/      page sections, scroll choreography, smooth-scroll provider
-    app/          dashboard shell and workbenches
-    ui/           shared building blocks
-  lib/            payoff, units, scenarios, store, portfolio, assets manifest
-    mock/         fake markets and vault epochs
-scripts/          optimize-model.mjs (gltf-transform pipeline)
-public/models/    optimized GLBs
+web/                       Next.js app (landing page + mock dashboard)
+  src/
+    app/                   routes: (landing)/, app/ (dashboard), icon, OG image, robots, sitemap, 404
+    components/            three/ (canvas, scene), landing/, app/, ui/
+    lib/                   payoff, units, scenarios, store, portfolio, assets manifest
+      mock/                fake markets and vault epochs
+  scripts/                 optimize-model.mjs (gltf-transform pipeline)
+  public/models/           optimized GLBs
+contracts/                 Solidity + Foundry (escrow, factory, registry, vault)
+  src/  test/
+packages/shared/           test-vectors.json (generated from the TS model, read by Foundry)
+keeper/                    placeholder for the observation / unwind keeper
 ```
 
 ## The payoff model
 
-`src/lib/payoff.ts` implements the structured-note rules with `bigint` fixed-point values (6 decimals), so numbers like 47.5 are exact and no floating point is involved.
+`web/src/lib/payoff.ts` implements the structured-note rules with `bigint` fixed-point values (6 decimals), so numbers like 47.5 are exact and no floating point is involved.
 
 One lot is `q` tokens and `n = q * P0` stablecoins. For `L` lots: principal `N = L*n`, tokens `Q = L*q`, barrier `B = b*P0`, optional autocall `A = a*P0`. There are `m` scheduled observations, each with a gross coupon `c`; the premium reserve is `R = m * c` per lot, funded by Protect. The protocol fee is 5% of the gross coupon (rounded down, remainder to Earn); there is no fee on principal, deposits or unwind.
 
@@ -101,7 +112,7 @@ The discontinuity at the barrier is intentional. Just below `B`, Earn bears the 
 
 ### Test vectors
 
-Market: `P0 = 100`, `N = 10,000`, `Q = 100` tokens, `B = 65`, `A = 100` (autocall on), 4 observations, gross coupon 50 per observation (`R = 200`), fee 5% (net 47.5, fee 2.5). All are unit tests in `src/lib/payoff.test.ts`.
+Market: `P0 = 100`, `N = 10,000`, `Q = 100` tokens, `B = 65`, `A = 100` (autocall on), 4 observations, gross coupon 50 per observation (`R = 200`), fee 5% (net 47.5, fee 2.5). All are unit tests in `web/src/lib/payoff.test.ts`, and they are also exported to `packages/shared/test-vectors.json` (18 scenarios, generated by `web/src/lib/shared-vectors.test.ts`). The Foundry suite replays that same file against the Solidity escrow and requires identical numbers.
 
 | # | Prices | Closure | Earn receives | Protect receives |
 | --- | --- | --- | --- | --- |
@@ -115,13 +126,24 @@ Also covered: equality at the barrier and at the autocall level, a missed observ
 ## Landing page
 
 - Lenis smooth scroll is synchronized with ScrollTrigger through GSAP's ticker (one provider, full cleanup).
-- The main object (a coin monument) is driven by ScrollTrigger through a shared object (`src/lib/scene-state.ts`), read in `useFrame`. Scrolling never causes a React render.
+- The main object (a coin monument) is driven by ScrollTrigger through a shared object (`web/src/lib/scene-state.ts`), read in `useFrame`. Scrolling never causes a React render.
 - Its position, scale and rotation are a pure function of scroll position (`ShieldChoreography`), plus per-section nudges from the two pinned timelines.
 - `prefers-reduced-motion`: no smooth scroll, no pinning, no scrubbed motion, the monument stays still, and all copy stays visible.
 - Weak devices (no WebGL, Save-Data, 2 GB or less memory, 2 cores or fewer) get a static monument (SVG) instead of a canvas. If a device cannot sustain about 18 fps for two consecutive 3-second windows, the scene gives up and the static monument takes over for the session.
 - Text is never blocked by model loading; a missing GLB renders a procedural placeholder.
 - The Vaults section has its own model (an exchange building). It lives in the same fixed canvas and trades places with the monument as you scroll (the monument shrinks away, the building grows in place). Its GLB is only requested when that section is about two screens away.
 - Add `?3d=on` to the URL to force the 3D scene on a device that was downgraded to the static monument (weak-device heuristics or the FPS give-up).
+
+## Contracts
+
+`contracts/` holds the on-chain version of the same rules (Solidity 0.8.24, Foundry, OpenZeppelin). See [`contracts/README.md`](./contracts/README.md) for the design, trust model and test map.
+
+- **`MarketEscrow`**: one market, immutable terms, no owner, no upgrade path. Observation, unwind and claims are permissionless.
+- **`MarketFactory` + `TemplateRegistry` + `StudioGuard`**: markets are created inside bounded templates; strike, schedule and fee are derived, not chosen by the creator.
+- **`EpochVault`**: epoch shares (non-transferable) over factory markets; downside tokens are shared pro rata in kind.
+- **Tests (`forge test`, 60):** the 18 shared vectors match the TypeScript model exactly; unit tests; fuzz against an independent reference model; handler-driven invariants (escrow always covers its obligations, one observation once in order, history append-only, terms never change, no admin path).
+
+They are not deployed, not audited, and not wired to the web app yet.
 
 ## Mock dashboard
 
@@ -141,12 +163,12 @@ Transactions are simulated: pending, then confirmed or reverted. The wallet is l
 
 ## 3D assets
 
-Every model is registered in `src/lib/assets.ts`. To add one:
+Every model is registered in `web/src/lib/assets.ts`. To add one:
 
-1. Put the raw GLB in `assets-src/` (git-ignored).
+1. Put the raw GLB in `web/assets-src/` (git-ignored).
 2. Optimize it:
    ```bash
-   node scripts/optimize-model.mjs assets-src/coin.raw.glb public/models/coin.glb --ratio 0.05 --texture 1024
+   node web/scripts/optimize-model.mjs web/assets-src/coin.raw.glb web/public/models/coin.glb --ratio 0.05 --texture 1024
    ```
    (weld, simplify, resize textures, WebP, meshopt compression.)
 3. Add an entry to the manifest:
@@ -163,7 +185,7 @@ Until the file exists, the procedural placeholder named in the entry is rendered
 | `exchange.glb` | 32 MB, 396k triangles | 0.8 MB, 83k triangles, 1024 px | Landing Vaults section (background canvas) and Vaults page header |
 | `monument-mini.glb` | (from the monument) | 0.3 MB, 30k triangles, 512 px | Portfolio empty state |
 
-`npm run assets:optimize` rebuilds all three from `assets-src/`. Component names still say "shield" and "vault": those are the scene's main-object and second-object slots (see D-045).
+`npm run assets:optimize` rebuilds all three from `web/assets-src/`. Component names still say "shield" and "vault": those are the scene's main-object and second-object slots (see D-045).
 
 Meshopt is used instead of Draco so no decoder is downloaded at runtime. Lighting is procedural (`Lightformer`), so there is no HDR download either.
 
@@ -204,7 +226,8 @@ What is still open: landing TBT is dominated by hydrating the whole page tree pl
 
 ## Limitations
 
-- **Mock data, no contracts.** There are no smart contracts, no oracle, no keeper or indexer, and no real wallet. The numbers come from the payoff model applied to invented markets.
+- **The web app is mock data.** It does not talk to the contracts, an oracle or a wallet; the numbers come from the payoff model applied to invented markets.
+- **The contracts are untested outside Foundry.** No deployment, no real oracle adapter, no keeper or indexer, no audit.
 - State is in memory and resets on reload.
 - Ticker symbols are labels for mock tokens, not real instruments.
 - Not audited, not live, not production-ready, and not an offer of any security.
@@ -212,10 +235,8 @@ What is still open: landing TBT is dominated by hydrating the whole page tree pl
 
 ## Next steps
 
-1. **Contracts:** `MarketEscrow` per market, factory, template registry and studio guard, a simple epoch vault. Foundry tests that reproduce the TypeScript test vectors exactly, plus fuzz and invariant tests (escrow balance covers all obligations; one observation, once, in order; no admin path to change history, strike or principal).
-2. **Real oracle:** price source, staleness limits and the missed-observation deadline policy, reviewed before any use.
-3. **Real wallet:** wagmi and a wallet kit, chain config from env, contract reads through event logs, keeping the mock mode as the demo fallback.
-4. **Keeper and indexer:** idempotent observation and unwind triggers.
-5. **Eligibility and legal review:** who can use each product and where.
-6. **Independent audit** and a public testnet period with an incident process.
-7. **Performance:** visibility-based hydration, smaller import surface, and measurement on real devices.
+1. **Integration (Phase 7):** deploy scripts (anvil and the testnet via env), an idempotent keeper (Node + viem), wallet integration, reading markets from contract events, keeping the mock mode as the demo fallback.
+2. **Real oracle:** a production adapter with a historical lookup, staleness limits and the missed-observation deadline policy, reviewed before any use.
+3. **Eligibility and legal review:** who can use each product and where.
+4. **Independent audit** and a public testnet period with an incident process.
+5. **Performance:** visibility-based hydration, smaller import surface, and measurement on real devices.

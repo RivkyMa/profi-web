@@ -250,3 +250,38 @@ What changed with it, because Sora is much wider than the serif:
 - The Open Graph card uses the same families. satori cannot read woff2, so `opengraph-image.tsx` fetches a subsetted TTF per family from Google Fonts at build time (3-4 KB each). If any fetch fails the card falls back to the built-in font and the build still passes (D-038 said "no external fonts"; this is the one build-time exception). `fonts: []` must not be passed: it replaces the default font and fails the build, which was found by testing the failure path.
 - Payload: Sora and Manrope are single variable files; the landing loads Sora, Manrope and Plex Mono 500, and 400 only where used.
 - The wordmark "PROFI" follows the display face. The shield mark (logo, icon, Open Graph) is unchanged, as in D-046.
+
+## Phase 6: Contracts (monorepo)
+
+Paths in earlier entries are relative to the app root, which is now `web/`.
+
+### D-049 Monorepo with npm workspaces
+`web/`, `contracts/`, `keeper/`, `packages/shared/` under one root `package.json` (`workspaces`). The app was moved with `git mv`/renames (96 renames detected, history kept) in its own commit before any contract work. Root scripts proxy to the workspaces so `npm install && npm run dev` still works from the root. The Pages workflow now publishes `web/out`; a separate `contracts.yml` workflow runs `forge test` and the TS vector check.
+Work happened on branch `phase-6-contracts` (cut from `codex/github-pages`) so the Pages deployment branch is untouched until merged.
+**Cost worth knowing:** moving the folder required stopping the project's `next dev` (Windows would not rename a directory it held open). It has to be restarted from the root.
+
+### D-050 Contract dependencies come from npm, not git submodules
+OpenZeppelin 5.6.1 and forge-std 1.9.7 (`github:foundry-rs/forge-std#v1.9.7`, because the npm `forge-std` is 1.1.2 and lacks current cheatcodes) are devDependencies of `contracts/`, hoisted to the root `node_modules`, and resolved with remappings plus `allow_paths`. A fresh clone needs only `npm ci` (and a Foundry install), no `git submodule update`.
+
+### D-051 What the escrow trusts, and what it refuses to
+- All terms are `immutable`; a market has no owner, no proxy, no setter.
+- Funds leave only through `claim`, `refund`, `cancel` (before activation) and `collectFees` (fixed recipient).
+- Observation, unwind, activation and fee collection are permissionless.
+- The price must have a timestamp inside the observation's window; windows cannot overlap, so a price belongs to one observation. A zero price from a misbehaving oracle is refused explicitly (found in review: it would otherwise read as "below the barrier" and force a downside).
+- `triggerUnwind` requires the window to be closed **and** no valid data sitting in the oracle, so a late `observe` beats a hostile unwind.
+
+### D-052 Matching and rounding are pool-based
+`matched = min(earnLots, protectLots, cap)`. Each side's pool for the matched lots is shared by subscribed lots (`pool * userLots / sideTotal`, floor), and unmatched lots are refunded the same way inside `claim`. Using integer lots per user would strand "dust lots" owned by nobody; pool shares strand only a few base units. Conservation is exact (`stable deposited == pools + fee + unmatched`), tested as an equality, and dust is bounded in the fuzz tests.
+
+### D-053 One fixture, two implementations
+`packages/shared/test-vectors.json` is generated from `payoff.ts` by a vitest test (`UPDATE_VECTORS=1` to rewrite) and compared against the file on every run, so it cannot drift from the model. `Vectors.t.sol` replays it against the real escrow. 18 scenarios cover the four mandatory vectors, equality and one-unit-either-side of barrier and autocall, autocall off, unwind at the first / middle / maturity observation, fee rounding, zero fee, and multi-lot six-observation markets. The Solidity result matched the TypeScript numbers on the first run.
+Fuzz tests use a **separate** loop-style Solidity reference model (`RefModel`) so an escrow bug would have to be reproduced in two independent implementations.
+
+### D-054 Factory-derived terms
+Studio creators pick shape inside a template (barrier, autocall or off, coupon as bps of principal, observation count from an allowed set, interval, subscription period, cap, lot size). The factory sets the strike from the oracle (must be fresh), the fee and window from the template, the schedule from now, and the fee recipient. This is stricter than the mock Studio, where strike was a fixed reference price.
+
+### D-055 EpochVault semantics
+Shares are 1:1 with stable deposited and are a mapping, not a token (non-transferable by construction). The manager picks markets and weights at epoch creation only. `lock` uses try/catch per market so one full market leaves its share as cash instead of blocking the epoch; `abort` exists so an epoch that missed its lock window cannot trap deposits; `settle` takes the returned amounts of `claim` / `refund` (not balance deltas); `redeem` is in kind only. The "redeem in cash" button in the mock app remains a UI convention.
+
+### D-056 Known gaps, stated rather than hidden
+Single-value oracle interface (a feed that overwrites its price before `observe` can cost an observation); strike taken at creation not activation; no deployment scripts yet; not audited. The invariant suite is meaningful but bounded: it reaches Closed, claims and unmatched refunds only because the handler has a `progress` action; coverage is printed by `afterInvariant` (`-vv`).

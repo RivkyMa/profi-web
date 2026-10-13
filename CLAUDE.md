@@ -1,8 +1,10 @@
 # PROFI: project memory for Claude
 
-@AGENTS.md
+@web/AGENTS.md
 
-PROFI is a structured-finance platform on Robinhood Chain. This repo (`profi-web`) is a **visual trial project**: a scroll-driven 3D landing page and a **mock** dashboard web app. Everything is mock data; there are no contracts, wallets or indexers (those are optional Phases 6-7, only on request: "lanjut ke kontrak").
+PROFI is a structured-finance platform on Robinhood Chain. This repo is a **monorepo** (npm workspaces): `web/` (scroll-driven 3D landing page and a **mock** dashboard), `contracts/` (Foundry, Phase 6), `keeper/` (placeholder), `packages/shared/` (cross-language fixtures). The web app is mock data; contracts exist but are not deployed or wired in (Phase 7 does that, only on request).
+
+**Paths below are relative to `web/` unless they start with `contracts/`, `packages/` or `keeper/`.**
 
 ## Working agreement
 - Work in phases. At the end of each phase: run lint + typecheck + test + build, summarize results, make a git commit, then **STOP** and wait for the user to type "lanjut". Never start the next phase on your own.
@@ -12,13 +14,17 @@ PROFI is a structured-finance platform on Robinhood Chain. This repo (`profi-web
 - Don't guess RPC URLs, contract addresses or chain config; read them from env.
 
 ## Commands
+Run from the repository root (root scripts proxy to the workspaces):
 ```bash
-npm run dev         # next dev
-npm run build       # next build (must pass; missing 3D assets must never break it)
-npm run lint        # eslint .
-npm run typecheck   # next typegen && tsc --noEmit
-npm test            # vitest run
-npm run assets:optimize   # raw GLBs (assets-src/, git-ignored) -> public/models/ (all three models)
+npm run dev               # web: next dev
+npm run build             # web: next build (must pass; missing 3D assets must never break it)
+npm run lint              # web: eslint .
+npm run typecheck         # web: next typegen && tsc --noEmit
+npm test                  # web: vitest run (includes the shared-vector check)
+npm run test:contracts    # contracts: forge test (needs Foundry; ~/.foundry/bin on this machine)
+npm run build:contracts   # contracts: forge build
+npm run assets:optimize   # web: raw GLBs (web/assets-src/, git-ignored) -> web/public/models/
+UPDATE_VECTORS=1 npm test # regenerate packages/shared/test-vectors.json after a model change
 ```
 
 ## Stack (don't swap without a strong reason)
@@ -30,7 +36,7 @@ TypeScript strict, Next.js 16 App Router (`src/app`), Tailwind CSS v4 (tokens in
 - 3D performance: compressed GLB, `useGLTF.preload`, Suspense + fallback, `next/dynamic` with `ssr: false` (inside a Client Component), explicit Canvas container height, `dpr` max 2, pause rendering off-screen, `prefers-reduced-motion` disables heavy animation, static fallback on mobile / weak devices. Text content must never be blocked by model loading.
 - Cache Components is on: routes stay mounted when hidden; clean up GSAP/Lenis/R3F correctly (see DECISIONS.md D-008).
 - Mock data lives in `src/lib/mock/`. "Connect Wallet" is local state only. Transactions are simulated (pending -> success/error).
-- Folders: `src/app`, `src/components/{three,landing,app,ui}`, `src/lib`, `src/lib/mock`.
+- Folders (web): `src/app`, `src/components/{three,landing,app,ui}`, `src/lib`, `src/lib/mock`.
 
 ## Payoff rules (source of truth for simulator and visuals)
 One lot = `q` underlying tokens and `n` stablecoins, `n = q * P0` (P0 = initial price / strike, stablecoin per token).
@@ -72,7 +78,8 @@ Also: equality at B and at A, missed observation -> unwind.
 - [x] Phase 3: Landing page (scroll storytelling)
 - [x] Phase 4: Mock dashboard (`/app/*`)
 - [x] Phase 5: Polish + docs
-- Phases 6-7 (contracts, integration) only on request.
+- [x] Phase 6: Core contracts (`contracts/`, Foundry, 60 tests, shared vectors)
+- Phase 7 (integration: deploy scripts, keeper, wallet, reading from chain) only on request: "lanjut" after Phase 6.
 
 ## Code map (Phase 2)
 - `src/lib/assets.ts` asset manifest + `preloadModels()`; `scene-state.ts` shared pose; `scroll.ts` Lenis/ScrollTrigger helpers; `device.ts` render tier; `use-reduced-motion.ts`.
@@ -109,3 +116,10 @@ Also: equality at B and at A, missed observation -> unwind.
 - `src/app/{icon.svg,opengraph-image.tsx,robots.ts,sitemap.ts,not-found.tsx,error.tsx}`: SEO and error surfaces. Root layout has the metadata and the skip link; every page's `<main>` has `id="main"`.
 - `FpsGuard` lives in `components/three/Scene.tsx`; the give-up flag is in `ShieldBackdrop.tsx`.
 - Verification checklist for any change: lint, typecheck, tests, production build, a dev-server console scan of all routes, and the browser journeys (desktop and mobile).
+
+## Code map (Phase 6)
+- `contracts/src`: `MarketEscrow` (the market), `MarketFactory`, `TemplateRegistry`, `StudioGuard` (library), `EpochVault`, `Types.sol`, `mocks/`. Terms are immutable; no owner on a market. Dependencies (OpenZeppelin 5.6.1, forge-std 1.9.7) come from npm via remappings in `contracts/foundry.toml` (no submodules).
+- `packages/shared/test-vectors.json` is generated from `payoff.ts` by `web/src/lib/shared-vectors.test.ts` and read by `contracts/test/Vectors.t.sol`. Never edit it by hand. If the model changes, regenerate, then make the contracts match.
+- Autocall off is `null` in TypeScript and `0` on chain. Amounts are 6-decimal base units in the fixtures.
+- Tests: `Vectors`, `MarketEscrow` (+ oracle, bad oracle), `Factory`, `EpochVault`, `MarketEscrowFuzz` (independent reference model `RefModel`), `MarketEscrowInvariant` (handler with a `progress` action so runs reach Closed and claims).
+- Foundry is not installed by npm. It is at `~/.foundry/bin` on this machine; put it on PATH or call `forge.exe` directly.
