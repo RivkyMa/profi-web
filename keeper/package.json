@@ -1,6 +1,27 @@
 {
   "name": "@profi/keeper",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
-  "description": "Observation and unwind keeper. Implemented in Phase 7."
+  "description": "Permissionless keeper: activates markets, records observations, triggers unwinds, locks and settles vault epochs. Testnet / mock only.",
+  "type": "module",
+  "engines": {
+    "node": ">=20.12"
+  },
+  "scripts": {
+    "start": "tsx src/main.ts",
+    "once": "tsx src/main.ts --once",
+    "test": "vitest run --passWithNoTests",
+    "typecheck": "tsc --noEmit",
+    "e2e": "tsx scripts/e2e.ts"
+  },
+  "dependencies": {
+    "@profi/shared": "*",
+    "viem": "^2.57.5"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2",
+    "tsx": "^4.23.15",
+    "typescript": "^5",
+    "vitest": "^5.0.3"
+  }
 }

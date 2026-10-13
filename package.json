@@ -20,6 +20,16 @@
     "test": "npm test -w web",
     "test:contracts": "npm test -w contracts",
     "build:contracts": "npm run build -w contracts",
-    "assets:optimize": "npm run assets:optimize -w web"
+    "assets:optimize": "npm run assets:optimize -w web",
+    "test:keeper": "npm test -w keeper",
+    "abi:export": "node scripts/export-abis.mjs",
+    "abi:check": "node scripts/export-abis.mjs --check",
+    "chain:anvil": "anvil",
+    "deploy:anvil": "npm run deploy:anvil -w contracts && node scripts/sync-env.mjs 31337",
+    "deploy:testnet": "npm run deploy:testnet -w contracts",
+    "env:sync": "node scripts/sync-env.mjs",
+    "keeper": "npm start -w keeper",
+    "keeper:once": "npm run once -w keeper",
+    "e2e:anvil": "npm run e2e -w keeper"
   }
 }
