@@ -50,3 +50,6 @@ web/assets-src/
 contracts/cache/
 contracts/broadcast/
 contracts/out/
+
+# Deployment manifests are local (see deployments/README.md)
+deployments/*.json

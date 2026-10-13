@@ -17,10 +17,19 @@ remappings = [
   "@openzeppelin/contracts/=../node_modules/@openzeppelin/contracts/",
   "forge-std/=../node_modules/forge-std/src/",
 ]
-allow_paths = ["../node_modules", "../packages/shared"]
+allow_paths = ["../node_modules", "../packages/shared", "../deployments"]
 
 # Tests read the shared JSON fixtures that the TypeScript model also asserts.
-fs_permissions = [{ access = "read", path = "../packages/shared" }]
+# Deploy scripts record what they deployed in ../deployments (git-ignored).
+fs_permissions = [
+  { access = "read", path = "../packages/shared" },
+  { access = "read-write", path = "../deployments" },
+]
+
+# Network endpoints are not hard-coded: `testnet` reads RPC_URL from the environment.
+[rpc_endpoints]
+anvil = "http://127.0.0.1:8545"
+testnet = "${RPC_URL}"
 
 [fuzz]
 runs = 512

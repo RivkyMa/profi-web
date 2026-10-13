@@ -8,7 +8,9 @@
     "test": "forge test",
     "test:fuzz": "forge test --match-path \"test/*Fuzz*\"",
     "test:invariant": "forge test --match-path \"test/*Invariant*\"",
-    "fmt": "forge fmt"
+    "fmt": "forge fmt",
+    "deploy:anvil": "forge script script/Deploy.s.sol --rpc-url anvil --broadcast --unlocked --sender 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "deploy:testnet": "forge script script/Deploy.s.sol --rpc-url testnet --broadcast"
   },
   "devDependencies": {
     "@openzeppelin/contracts": "5.6.1",
