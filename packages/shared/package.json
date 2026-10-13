@@ -2,9 +2,11 @@
   "name": "@profi/shared",
   "version": "0.1.0",
   "private": true,
-  "description": "Cross-language fixtures shared by the TypeScript payoff model and the Solidity contracts.",
+  "description": "Shared between the web app, the keeper and the contracts: generated ABIs, enum constants and cross-language fixtures.",
   "type": "module",
   "exports": {
+    ".": "./src/index.ts",
+    "./abis": "./src/abis.ts",
     "./test-vectors.json": "./test-vectors.json"
   }
 }
