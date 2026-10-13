@@ -44,7 +44,7 @@ async function loadFont(
 
 /** Static social card, generated at build time. Same three families as the site (D-048). */
 export default async function OpenGraphImage() {
-  const logo = await readFile(join(process.cwd(), "public/brand/profi-wordmark.png"), "base64");
+  const logo = await readFile(join(process.cwd(), "public/brand/profi-wordmark-cyan.png"), "base64");
   const [sora, manrope, plex] = await Promise.all([
     loadFont("Sora", 600, `PROFI${HEADLINE}`),
     loadFont("Manrope", 500, SUBLINE),
@@ -79,15 +79,15 @@ export default async function OpenGraphImage() {
           fontFamily: "sans-serif", // overridden per element once the fonts load
         }}
       >
-        <div style={{ display: "flex", position: "relative", width: 249, height: 80, overflow: "hidden" }}>
+        <div style={{ display: "flex", position: "relative", width: 249, height: 79, overflow: "hidden" }}>
           {/* ImageResponse renders the supplied local asset directly. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={`data:image/png;base64,${logo}`}
             alt="PROFI"
-            width={326}
-            height={109}
-            style={{ position: "absolute", left: -42, top: -18 }}
+            width={290}
+            height={163}
+            style={{ position: "absolute", left: -21, top: -42 }}
           />
         </div>
 
