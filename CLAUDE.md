@@ -102,6 +102,7 @@ Also: equality at B and at A, missed observation -> unwind.
 ## Code map (model revision, D-045 to D-047)
 - Models: `monument.glb` (main object), `exchange.glb` (Vaults section + Vaults header), `monument-mini.glb` (portfolio). `npm run assets:optimize` rebuilds all three from `assets-src/{bitcoin_monument_,exchange_building}.glb`.
 - Names were kept: "shield" (`ShieldModel`, `ShieldRig`, `ShieldChoreography`, `ShieldFallback`) is the main-object slot, "vault" (`VaultRig`, `sceneState.vault`) the second-object slot.
+- Fonts (D-048): Sora display (`font-display`, weight 560 set in `globals.css`), Manrope text (body 450), IBM Plex Mono figures and labels (`font-mono`). Loaded with `next/font/google` in `layout.tsx`; `opengraph-image.tsx` fetches subsetted TTFs at build and falls back to the default font if that fails.
 - Both models are thin and one-faced: keep rotY within about +-0.6 rad in `STOPS`; the dashboard accents sway instead of spinning.
 
 ## Code map (Phase 5)

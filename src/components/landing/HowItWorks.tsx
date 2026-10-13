@@ -130,7 +130,7 @@ export function HowItWorks() {
               </p>
               <h2
                 id="how-title"
-                className="font-display text-h2 leading-[1.02] tracking-[-0.02em]"
+                className="font-display text-h2 leading-[1.1] tracking-[-0.02em]"
               >
                 From template to claim.
               </h2>

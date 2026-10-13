@@ -56,7 +56,7 @@ Optional environment variables are listed in `.env.example` (site URL for metada
 
 ## Stack
 
-Next.js 16 (App Router, Turbopack), React 19, TypeScript (strict), Tailwind CSS v4, React Three Fiber + drei + three, GSAP + ScrollTrigger + `@gsap/react`, Lenis, zustand, Vitest. Fonts via `next/font`: Instrument Serif, Geist, Geist Mono.
+Next.js 16 (App Router, Turbopack), React 19, TypeScript (strict), Tailwind CSS v4, React Three Fiber + drei + three, GSAP + ScrollTrigger + `@gsap/react`, Lenis, zustand, Vitest. Fonts via `next/font`: Sora (display), Manrope (text), IBM Plex Mono (figures and labels).
 
 ## What is in the box
 

@@ -22,7 +22,7 @@ export function PageHeader({
             {eyebrow}
           </p>
         )}
-        <h1 className="font-display text-h2 leading-[1.02] tracking-[-0.02em]">
+        <h1 className="font-display text-h2 leading-[1.1] tracking-[-0.02em]">
           {title}
         </h1>
         <p className="mt-3 text-lead text-ink-2">{description}</p>

@@ -59,7 +59,7 @@ export function Hero() {
             Testnet / Mock data
           </Badge>
           <h1
-            className="animate-rise-soft font-display text-display leading-[0.95] tracking-[-0.02em]"
+            className="animate-rise-soft font-display text-display leading-[1] tracking-[-0.02em]"
             style={{ "--delay": "80ms" } as React.CSSProperties}
           >
             Protection for owners. Premium for holders.

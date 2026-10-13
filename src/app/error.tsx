@@ -17,7 +17,7 @@ export default function ErrorPage({
       <p className="font-mono text-xs tracking-[0.14em] text-loss uppercase">
         Something went wrong
       </p>
-      <h1 className="font-display text-h2 leading-[1.02] tracking-[-0.02em]">
+      <h1 className="font-display text-h2 leading-[1.1] tracking-[-0.02em]">
         This page failed to render.
       </h1>
       <p className="max-w-md text-ink-2">

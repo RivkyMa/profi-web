@@ -12,7 +12,7 @@ export default function NotFound() {
       <p className="font-mono text-xs tracking-[0.14em] text-pulse uppercase">
         Error 404
       </p>
-      <h1 className="font-display text-display leading-[0.95] tracking-[-0.02em]">
+      <h1 className="font-display text-display leading-[1] tracking-[-0.02em]">
         Nothing here.
       </h1>
       <p className="max-w-md text-lead text-ink-2">

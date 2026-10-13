@@ -55,7 +55,7 @@ export function VaultsShowcase() {
               </p>
               <h2
                 id="vaults-title"
-                className="font-display text-h2 leading-[1.02] tracking-[-0.02em]"
+                className="font-display text-h2 leading-[1.1] tracking-[-0.02em]"
               >
                 One deposit, several markets.
               </h2>

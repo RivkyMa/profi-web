@@ -13,7 +13,7 @@ export function FinalCta() {
       <div className="mx-auto flex w-full max-w-[var(--max)] flex-col items-center gap-6 text-center">
         <h2
           id="cta-title"
-          className="max-w-3xl font-display text-h2 leading-[1.02] tracking-[-0.02em] text-balance"
+          className="max-w-3xl font-display text-h2 leading-[1.1] tracking-[-0.02em] text-balance"
         >
           Walk through a market from template to claim.
         </h2>

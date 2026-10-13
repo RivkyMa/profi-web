@@ -76,7 +76,7 @@ export function Section({
             {title && (
               <h2
                 id={titleId}
-                className="font-display text-h2 leading-[1.02] tracking-[-0.02em] text-ink-1"
+                className="font-display text-h2 leading-[1.1] tracking-[-0.02em] text-ink-1"
               >
                 {title}
               </h2>

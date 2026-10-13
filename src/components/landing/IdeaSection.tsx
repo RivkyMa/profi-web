@@ -85,7 +85,7 @@ export function IdeaSection() {
           </p>
           <h2
             id="idea-title"
-            className="font-display text-h2 leading-[1.02] tracking-[-0.02em]"
+            className="font-display text-h2 leading-[1.1] tracking-[-0.02em]"
           >
             Two sides. One escrow.
           </h2>

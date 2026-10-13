@@ -59,9 +59,9 @@ const STOPS: readonly Stop[] = [
   {
     id: "hero",
     wide: look({ x: 1.9, y: 0, scale: 1, rotY: -0.3, rotX: 0, dim: 1 }),
-    // On phones it sits above the headline and is dimmed a little, because
-    // its plinth still reaches behind the first line of copy.
-    narrow: look({ x: 0, y: 1.3, scale: 0.62, rotY: -0.2, rotX: 0, dim: 0.7 }),
+    // On phones it sits above the badge, small and dimmed a little: the copy
+    // is bottom-aligned and Manrope sets it taller than the old text face.
+    narrow: look({ x: 0, y: 1.4, scale: 0.48, rotY: -0.2, rotX: 0, dim: 0.7 }),
   },
   {
     id: "idea",

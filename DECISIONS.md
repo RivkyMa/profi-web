@@ -36,6 +36,7 @@ The reference site is dark, near-black grounds with warm off-white ink, one brus
 Accent is "brass" (`#c9a35f` family). Semantic colors: `gain` (green), `loss` (red), `steel` (neutral info). Outcomes are always paired with a text label so color is never the only signal.
 The reference's own fonts (Erode, Supreme) are Fontshare-distributed and not available via `next/font/google`, so they are not used.
 **Accent will be re-tuned in Phase 2** once it is checked against the actual shield model's materials.
+**Fonts: superseded by D-048** (the table above is the original choice).
 
 ### D-007 `.env.example` and no hard-coded chain config
 RPC URLs, chain ids and contract addresses are never guessed or hard-coded. They come from env (see `.env.example`). `.gitignore` ignores `.env*` but explicitly un-ignores `.env.example`.
@@ -230,3 +231,22 @@ Both new models are thin (depth about a third of the width) and the coin shows i
 - The dashboard accents sway about +-35 degrees instead of running a turntable.
 - The coin face is a near mirror facing the camera and rendered almost black; a soft front `Lightformer` gives it something to reflect. Still no HDR and no postprocessing (D-018).
 - The static fallback SVG is redrawn as the monument (coin on a plinth) and sized like the hero pose (400 px wide screens, at most 170 px on phones).
+
+### D-048 Typography: Sora, Manrope and IBM Plex Mono (supersedes the font table in D-006)
+Requested restyle: fonts that suit the revised look (graphite monument and temple, neon cyan and violet rim light) and more than one family. Eight candidate stacks were rendered on the real palette and compared (a specimen sheet, not committed); the single-weight condensed serif was the one that fit the new models least, so all three roles changed.
+
+| Role | Font | Why |
+| --- | --- | --- |
+| Display | Sora 560 | Wide geometric sans with true round bowls: the O, e and a echo the coin and its rim, and the width reads as monumental next to the plinth. Variable, one file. |
+| Text | Manrope 450 | Geometric like the display but quieter, so long risk copy stays comfortable. 450 because 400 is thin for 13-15px text on a near-black ground. Variable, one file. |
+| Figures, labels | IBM Plex Mono 400 / 500 | Institutional (finance) mono, clear dotted zero, tabular by nature. Narrower than the wide monos tried (Martian Mono), so the uppercase tracked labels and payoff tables keep their layout. Static weights, two small files. |
+
+Rejected: Space Grotesk (the most "crypto", least distinct), Syne and Michroma (decorative; Michroma wraps badly), Chakra Petch (reads as a game UI), Tenor Sans (elegant but too light against the heavy models).
+
+What changed with it, because Sora is much wider than the serif:
+- `--text-display` 46-104px became 40-76px, `--text-h2` 32-56px became 28-44px, `--text-h3` 24-28px became 20-24px, `--text-lead` is 16px on phones and about 20px on desktop. Heading leading went from 1.02 / 0.95 to 1.1 / 1.
+- A display face with no "natural" weight needs one: `.font-display` sets 560 in the `components` layer, so a heading can still override it with `font-medium` and friends.
+- On phones the copy is bottom-aligned and now sets taller, so the monument sits smaller and higher (scale 0.48, y 1.4) and the static fallback is at most 112px wide. Verified in the 3D and the no-WebGL paths.
+- The Open Graph card uses the same families. satori cannot read woff2, so `opengraph-image.tsx` fetches a subsetted TTF per family from Google Fonts at build time (3-4 KB each). If any fetch fails the card falls back to the built-in font and the build still passes (D-038 said "no external fonts"; this is the one build-time exception). `fonts: []` must not be passed: it replaces the default font and fails the build, which was found by testing the failure path.
+- Payload: Sora and Manrope are single variable files; the landing loads Sora, Manrope and Plex Mono 500, and 400 only where used.
+- The wordmark "PROFI" follows the display face. The shield mark (logo, icon, Open Graph) is unchanged, as in D-046.

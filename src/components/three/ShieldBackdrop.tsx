@@ -142,10 +142,10 @@ export function ShieldBackdrop() {
       {/* The choreography sets this element's opacity directly. */}
       <div data-shield-dim className="absolute inset-0">
         {/* Placed like the hero pose: above the copy on phones, to its right on wide screens. */}
-        <div className="absolute inset-0 flex items-start justify-center pt-[9vh] lg:items-center lg:justify-end lg:pt-0 lg:pr-[9vw]">
+        <div className="absolute inset-0 flex items-start justify-center pt-[8vh] lg:items-center lg:justify-end lg:pt-0 lg:pr-[9vw]">
           <ShieldFallback
             className={cn(
-              "w-[min(42vw,170px)] lg:w-[400px] transition-opacity duration-700 ease-premium",
+              "w-[min(30vw,112px)] lg:w-[400px] transition-opacity duration-700 ease-premium",
               staticVisible ? "opacity-90" : "opacity-0",
             )}
           />
